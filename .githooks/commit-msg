@@ -1,0 +1,28 @@
+#!/bin/sh
+#
+# Reject commit messages that credit Claude (Anthropic) as a co-author or carry
+# Claude Code / Claude session attribution. Human co-authors are never affected:
+# only Co-authored-by lines that point at Anthropic or a Claude model are rejected.
+#
+# Enable once per clone:  git config core.hooksPath .githooks
+
+msg_file="$1"
+
+# Git strips comment lines and everything below the scissors line (git commit -v)
+# after this hook runs, so ignore them here too. Matching is case-insensitive.
+body=$(sed -e '/^# -\{24\} >8 -\{24\}$/,$d' -e '/^#/d' "$msg_file" | tr '[:upper:]' '[:lower:]')
+
+coauthor='^[[:space:]]*co-authored-by:.*(@anthropic\.com|claude[[:space:]]+(opus|sonnet|haiku|fable|code|[0-9])|[0-9]+\+claude@users\.noreply\.github\.com)'
+generated='generated (with|by) \[?claude'
+session='claude\.(ai|com)/(code/)?session|^[[:space:]]*claude[-_ ]session'
+
+found=$(printf '%s\n' "$body" | grep -nE "$coauthor|$generated|$session")
+
+if [ -n "$found" ]; then
+  echo "commit-msg hook: commit rejected. The message contains Claude attribution:" >&2
+  printf '%s\n' "$found" | sed 's/^/  line /' >&2
+  echo "Remove those lines (see the Git attribution rules in CLAUDE.md) and commit again." >&2
+  exit 1
+fi
+
+exit 0

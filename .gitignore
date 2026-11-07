@@ -1,0 +1,35 @@
+# OS and editor files
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+
+# Python (later phases)
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Dependencies and build output (repo-wide fallback; web/.gitignore covers web/)
+node_modules/
+.next/
+out/
+build/
+dist/
+coverage/
+*.tsbuildinfo
+.vercel/
+
+# Logs and keys
+*.log
+*.pem
+*.key
+
+# Claude Code per-user settings (shared settings live in .claude/settings.json)
+.claude/settings.local.json
