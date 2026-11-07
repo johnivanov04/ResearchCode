@@ -1,0 +1,69 @@
+# Tests the scientific Python starter kit in scientific-starter/.
+#
+# The starter is copied out of the monorepo before testing, so every run also proves that
+# it works as an independent project, which is how researchers use it. The starter's own
+# .github/workflows/ci.yml performs the same checks once a copy becomes a repository root.
+
+name: Scientific starter
+
+on:
+  push:
+    branches: [main]
+    paths: ["scientific-starter/**", ".github/workflows/starter.yml"]
+  pull_request:
+    paths: ["scientific-starter/**", ".github/workflows/starter.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: starter-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Starter on Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13"]
+    env:
+      HYPOTHESIS_PROFILE: ci
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Copy the starter out of the monorepo
+        run: cp -R scientific-starter "$RUNNER_TEMP/starter"
+
+      - uses: astral-sh/setup-uv@v10
+        with:
+          version: "0.12.19"
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+          working-directory: ${{ runner.temp }}/starter
+
+      - name: Install from the lock file
+        working-directory: ${{ runner.temp }}/starter
+        run: uv sync --locked
+
+      - name: Lint (including security rules)
+        working-directory: ${{ runner.temp }}/starter
+        run: uv run ruff check .
+
+      - name: Check formatting
+        working-directory: ${{ runner.temp }}/starter
+        run: uv run ruff format --check .
+
+      - name: Run tests
+        working-directory: ${{ runner.temp }}/starter
+        run: uv run pytest
+
+      - name: Build the package
+        working-directory: ${{ runner.temp }}/starter
+        run: uv build
+
+      - name: Install the built wheel in a clean environment and import it
+        working-directory: ${{ runner.temp }}/starter
+        run: uv run --isolated --no-project --with dist/*.whl python -c "import scientific_starter"

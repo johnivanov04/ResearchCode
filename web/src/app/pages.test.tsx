@@ -11,6 +11,7 @@ import HomePage from "@/app/page";
 import StarterKitPage from "@/app/starter-kit/page";
 import { guides } from "@/content/guides";
 import { primaryNav } from "@/content/site";
+import { starterSourceUrl } from "@/content/starter-kit";
 
 const knownRoutes = new Set(["/", ...primaryNav.map((item) => item.href), ...guides.map((g) => `/guides/${g.slug}`)]);
 
@@ -71,10 +72,13 @@ describe("static pages", () => {
 });
 
 describe("honesty requirements", () => {
-  it("starter kit states that nothing is downloadable yet", () => {
+  it("starter kit explains that it is a monorepo folder, not a template or download", () => {
     const { container } = render(<StarterKitPage />);
-    expect(container.textContent).toMatch(/Not yet available for download/);
-    expect(container.textContent).toMatch(/Planned/);
+    expect(container.textContent).toMatch(/not a separate GitHub template repository/);
+    expect(container.textContent).toMatch(/no download package/);
+    expect(container.querySelector(`a[href="${starterSourceUrl}"]`)).not.toBeNull();
+    // Scope limits stay visible: the full analysis is still planned.
+    expect(container.textContent).toMatch(/planned for Phase 3/);
   });
 
   it("evaluation page presents a design with no results", () => {

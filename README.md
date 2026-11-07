@@ -15,7 +15,7 @@ publication or service.
 | Phase | Scope                                                        | Status      |
 | ----- | ------------------------------------------------------------ | ----------- |
 | 1     | Website and project foundation                               | Implemented |
-| 2     | Scientific Python starter kit (uv, pytest, Ruff, CI)         | Planned     |
+| 2     | Scientific Python starter kit (uv, pytest, Ruff, CI)         | Implemented |
 | 3     | Worked bacterial growth analysis built with the starter kit  | Planned     |
 | 4     | Controlled comparison: unstructured vs structured AI coding  | Planned     |
 | 5     | Deployment, documentation, and polish                        | Planned     |
@@ -31,13 +31,36 @@ See [docs/PROJECT_PLAN.md](docs/PROJECT_PLAN.md) for architecture, milestones, a
 │   ├── src/components/   Shared UI (navigation, code and prompt blocks, checklists, chart)
 │   ├── src/content/      Site config and guide content as typed TypeScript modules
 │   └── src/lib/          Growth-rate calculations for the interactive example
+├── scientific-starter/   Copyable scientific Python project (uv, pytest, Hypothesis, Ruff, CI)
 ├── docs/                 Project plan and design documents
-├── .github/workflows/    CI for the website
+├── .github/workflows/    CI for the website (web.yml) and the starter (starter.yml)
 ├── CLAUDE.md             Instructions for AI coding assistants working in this repo
 └── README.md
 ```
 
-`scientific-starter/` (Phase 2) and `experiments/` (Phase 4) will be added in later phases.
+`experiments/` (Phase 4) will be added in a later phase.
+
+## Scientific Python starter kit
+
+`scientific-starter/` is a complete, independent Python project that researchers copy into
+their own repository. It contains no runtime dependencies, a worked growth-rate example with
+its specification and tests, a run-metadata helper, instructions for AI assistants, a
+specification template, and a security checklist. See
+[scientific-starter/README.md](scientific-starter/README.md) for setup and usage.
+
+Requirements: [uv](https://docs.astral.sh/uv/getting-started/installation/) (it installs
+Python 3.12 automatically). From `scientific-starter/`:
+
+```bash
+uv sync --locked             # install exact versions from uv.lock
+uv run pytest                # tests (known-answer, edge-case, property-based, doctests)
+uv run ruff check .          # lint, including security rules
+uv run ruff format --check . # formatting
+uv build                     # build wheel and source distribution into dist/
+```
+
+GitHub Actions (`.github/workflows/starter.yml`) copies the starter out of the monorepo and runs
+these checks on Python 3.12 and 3.13 whenever files in `scientific-starter/` change.
 
 ## Running the website locally
 
@@ -74,7 +97,8 @@ All commands run from `web/`:
 | `npm run build`      | Production build; fails if any page stops being static    |
 | `npm run check`      | All of the above, in order                                |
 
-GitHub Actions runs the same checks on every push and pull request that touches `web/`.
+GitHub Actions runs the same checks on every push and pull request that touches `web/` or
+`scientific-starter/` (the website's tests verify that the starter-kit page matches the starter's files).
 
 ### Dependency audit
 

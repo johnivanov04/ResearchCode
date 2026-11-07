@@ -1,0 +1,63 @@
+# Continuous integration for a project created from the ResearchCode scientific starter.
+#
+# GitHub runs this workflow when this directory is the root of your repository. (Inside the
+# ResearchCode monorepo it is inactive; there, .github/workflows/starter.yml at the
+# repository root tests the starter.)
+#
+# On every push and pull request it installs exactly what uv.lock specifies, then runs
+# the same checks you run locally, on each supported Python version.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13"]
+    env:
+      # Try many more random examples in property-based tests than local runs do.
+      HYPOTHESIS_PROFILE: ci
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v10
+        with:
+          # Pin uv so CI behaves the same on every run; update deliberately.
+          version: "0.12.19"
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+
+      - name: Install from the lock file
+        run: uv sync --locked
+
+      - name: Lint (including security rules)
+        run: uv run ruff check .
+
+      - name: Check formatting
+        run: uv run ruff format --check .
+
+      - name: Run tests
+        run: uv run pytest
+
+      - name: Build the package
+        run: uv build
+
+      - name: Install the built wheel in a clean environment and import it
+        # If you rename the package, update the import below.
+        run: uv run --isolated --no-project --with dist/*.whl python -c "import scientific_starter"
