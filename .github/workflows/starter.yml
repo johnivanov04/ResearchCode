@@ -37,7 +37,8 @@ jobs:
       - name: Copy the starter out of the monorepo
         run: cp -R scientific-starter "$RUNNER_TEMP/starter"
 
-      - uses: astral-sh/setup-uv@v10
+      # setup-uv publishes only full version tags (there is no moving "v10" tag).
+      - uses: astral-sh/setup-uv@v10.3.3
         with:
           version: "0.12.19"
           python-version: ${{ matrix.python-version }}
