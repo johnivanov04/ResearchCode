@@ -29,8 +29,8 @@ const principles = [
 ];
 
 const roadmap: { phase: string; title: string; body: string; status: Status }[] = [
-  { phase: "Phase 1", title: "Website and foundation", body: "This site, the first guides, and the project's engineering setup.", status: "in-progress" },
-  { phase: "Phase 2", title: "Scientific Python starter kit", body: "A reusable template with uv, pytest, Ruff, CI, and AI assistant instructions.", status: "planned" },
+  { phase: "Phase 1", title: "Website and foundation", body: "This site, the first guides, and the project's engineering setup.", status: "available" },
+  { phase: "Phase 2", title: "Scientific Python starter kit", body: "A reusable template with uv, pytest, Hypothesis, Ruff, CI, AI assistant instructions, and run metadata.", status: "available" },
   { phase: "Phase 3", title: "Worked scientific application", body: "A complete bacterial growth analysis built with the starter kit.", status: "planned" },
   { phase: "Phase 4", title: "Controlled evaluation", body: "The comparison of unstructured and structured AI-assisted development.", status: "planned" },
   { phase: "Phase 5", title: "Deployment and polish", body: "Public deployment, accessibility audit, and documentation review.", status: "planned" },

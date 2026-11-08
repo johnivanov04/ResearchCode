@@ -3,9 +3,11 @@ name: Website
 on:
   push:
     branches: [main]
-    paths: ["web/**", ".github/workflows/web.yml"]
+    # scientific-starter/** is included because the website's tests check that the
+    # starter-kit page matches the files and commands in that directory.
+    paths: ["web/**", "scientific-starter/**", ".github/workflows/web.yml"]
   pull_request:
-    paths: ["web/**", ".github/workflows/web.yml"]
+    paths: ["web/**", "scientific-starter/**", ".github/workflows/web.yml"]
   workflow_dispatch:
 
 permissions:

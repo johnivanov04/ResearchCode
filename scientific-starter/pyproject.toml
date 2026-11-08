@@ -1,0 +1,74 @@
+[project]
+name = "scientific-starter"
+version = "0.1.0"
+description = "A starter project for correct, tested, reproducible scientific Python (from ResearchCode)."
+readme = "README.md"
+requires-python = ">=3.12"
+# Runtime dependencies. Add them with `uv add <package>`, never by editing this list by hand
+# and never with `pip install`. The example code needs only the Python standard library.
+dependencies = []
+
+[dependency-groups]
+# Development-only tools: installed by `uv sync`, not required by users of the package.
+dev = [
+    "hypothesis>=6.170.15",
+    "pytest>=9.2.0",
+    "ruff>=0.17.4",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.19,<0.13.0"]
+build-backend = "uv_build"
+# uv_build expects the package directory to match the project name, with dashes replaced
+# by underscores: name = "scientific-starter" -> src/scientific_starter/.
+
+# ---------------------------------------------------------------------------------------
+# Ruff: linting (`uv run ruff check .`) and formatting (`uv run ruff format .`).
+# The target Python version is read from requires-python above.
+# ---------------------------------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+  "E",    # pycodestyle errors
+  "W",    # pycodestyle warnings
+  "F",    # pyflakes: undefined names, unused imports and variables
+  "I",    # import sorting
+  "B",    # flake8-bugbear: likely bugs (mutable defaults, loop variable capture, ...)
+  "A",    # shadowing Python builtins such as `input`, `sum`, `type`
+  "S",    # flake8-bandit: security checks (subprocess, pickle, eval, hard-coded secrets, ...)
+  "UP",   # pyupgrade: modern syntax for the target Python version
+  "SIM",  # simplifications
+  "C4",   # comprehensions
+  "PT",   # pytest style
+  "N",    # PEP 8 naming
+  "DTZ",  # timezone-naive datetimes
+  "PTH",  # prefer pathlib over os.path
+  "NPY",  # NumPy-specific checks, e.g. legacy global random seeding (once you add NumPy)
+  "PGH",  # require specific error codes in `# noqa` comments
+  "T10",  # leftover debugger calls
+  "RUF",  # Ruff-specific checks
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests use plain `assert` (S101); pytest rewrites asserts, so they are not skipped under -O.
+"tests/**" = ["S101"]
+
+# ---------------------------------------------------------------------------------------
+# pytest (`uv run pytest`)
+# ---------------------------------------------------------------------------------------
+[tool.pytest.ini_options]
+# "src" is included so that the examples in docstrings are run as tests (doctests).
+testpaths = ["tests", "src"]
+addopts = [
+  "-ra",
+  "--strict-markers",
+  "--strict-config",
+  "--import-mode=importlib",
+  "--doctest-modules",
+]
+xfail_strict = true
+# Treat warnings as errors: in scientific code a warning (for example, a division by zero
+# or an invalid value in a log) usually means a result is wrong.
+filterwarnings = ["error"]

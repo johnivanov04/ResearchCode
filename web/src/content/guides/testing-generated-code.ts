@@ -249,7 +249,7 @@ Specification:
       blocks: [
         {
           type: "paragraph",
-          text: "Tests only help if they run. Run them locally before every commit and automatically on every push. The ResearchCode starter kit, planned for the next phase, will set this up with a GitHub Actions workflow.",
+          text: "Tests only help if they run. Run them locally before every commit and automatically on every push. The ResearchCode starter kit includes a GitHub Actions workflow that does this on every push and pull request.",
         },
         {
           type: "code",

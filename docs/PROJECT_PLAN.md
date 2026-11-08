@@ -19,7 +19,7 @@ is new. No existing history or files had to be preserved beyond `.git/`.
 ```
 ResearchCode/
 ├── web/                  Next.js website (Phase 1)
-├── scientific-starter/   Python starter template (Phase 2, not yet created)
+├── scientific-starter/   Python starter template (Phase 2)
 ├── experiments/          Experiment protocol, tasks, raw results (Phase 4, not yet created)
 ├── docs/                 Design docs, methodology, plans
 ├── .github/workflows/    CI
@@ -59,7 +59,7 @@ browsers. End-to-end browser tests are a reasonable Phase 5 addition.
 | `/`                     | Headline, the reliability problem, audience, workflow diagram       |
 | `/guides`               | Index of guides                                                     |
 | `/guides/[slug]`        | Individual guide (statically generated from content modules)        |
-| `/starter-kit`          | Planned Python template; explicit planned vs available status       |
+| `/starter-kit`          | The Python starter: contents, setup, copy instructions, limits      |
 | `/example`              | Bacterial growth analysis as a representative task; pitfalls        |
 | `/evaluation`           | Proposed vibe-coding vs structured-workflow study; no results yet   |
 | `/about`                | Academic context, mission, roadmap                                  |
@@ -80,10 +80,52 @@ browsers. End-to-end browser tests are a reasonable Phase 5 addition.
 - Component tests for rendering and navigation
 - CI workflow running lint, typecheck, tests, build
 
-### Phase 2 — Scientific Python starter kit
-- `scientific-starter/` template: uv, Python 3.12+, pytest, Ruff, GitHub Actions
-- AI-assistant instruction file, specification template, README template
-- Starter kit page updated from "planned" to "available" per component
+### Phase 2 — Scientific Python starter kit (implemented on `feat/phase-2-starter`)
+
+A self-contained, copyable Python project in `scientific-starter/`. It has no runtime
+dependencies, works independently of the website, and lives in this monorepo as a folder
+(not a separate GitHub template repository).
+
+| Concern | Decision and reasoning |
+| ------- | ---------------------- |
+| Packaging | uv with `uv_build` backend, `src/scientific_starter/`, `pyproject.toml`, committed `uv.lock`, `.python-version` 3.12, `requires-python >=3.12`. `uv_build` is uv's default backend; it requires the package folder to match the project name, which the README's rename steps explain. |
+| Runtime dependencies | None. The example and the metadata helper need only the standard library; researchers add NumPy and others with `uv add`. |
+| Dev dependencies | pytest, Hypothesis, Ruff (dependency group `dev`). |
+| Tests | Known-answer, edge-case, invalid-input, Hypothesis property tests, numerical accuracy against a 50-digit `decimal` reference, doctests. pytest runs with warnings as errors and strict config/markers. Hypothesis profiles: `dev` (200 examples) and `ci` (2000). |
+| Lint | Ruff rule groups E, W, F, I, B, A, S, UP, SIM, C4, PT, N, DTZ, PTH, NPY, PGH, T10, RUF; `S101` allowed in tests only. |
+| Example | `growth.py`: `specific_growth_rate(od1, od2, t1_h, t2_h)` and `doubling_time(rate_per_h)`, specified in `docs/spec-growth-rate.md`. Zero growth returns exactly 0.0 and an infinite doubling time; negative rates are returned, and their doubling time raises `ValueError`. `ln(od2/od1)` uses `log1p` within a factor of two and a difference of logs otherwise, after a property test showed that the naive formula reports zero growth for adjacent large floats. |
+| Provenance | `provenance.py`: `write_run_metadata` writes `run_metadata.json` with Python/package versions, `uv.lock` checksum, git commit and dirty flag, seed, parameters, and input file name/size/SHA-256. It omits host names, user names, absolute paths, environment variables, and remote URLs, rejects credential-like parameter names, and refuses to overwrite. |
+| Entry point | `cli.py`: reads a two-row CSV, validates it, writes `result.json` and run metadata; refuses to overwrite without `--overwrite`. |
+| Docs | `README.md`, `AGENTS.md` (rules for any assistant), `CLAUDE.md` (imports `AGENTS.md`), `.claude/settings.json` (attribution off), `docs/SPEC_TEMPLATE.md`, `docs/spec-growth-rate.md`, `docs/SECURITY_CHECKLIST.md`. |
+| CI | `.github/workflows/starter.yml` (monorepo): copies the starter out of the repository, then on Python 3.12 and 3.13 runs `uv sync --locked`, `ruff check`, `ruff format --check`, `pytest`, `uv build`, and an isolated install-and-import of the wheel. `scientific-starter/.github/workflows/ci.yml` runs the same checks once a copy is a repository root. `web.yml` also triggers on `scientific-starter/**` because website tests read it. |
+| Website | `/starter-kit` rewritten from `web/src/content/starter-kit.ts`; `starter-kit.test.ts` checks every listed path exists and every shown command appears in the starter README. Home toolkit card and About roadmap marked Available. |
+
+Phase 2 milestones:
+1. Python foundation: packaging, lock file, Ruff and pytest configuration.
+2. Growth example with specification and full test suite; mutation check that tests catch
+   injected bugs.
+3. Run metadata helper and command-line entry point with tests.
+4. AI assistant instructions, specification template, security checklist, README.
+5. CI for the monorepo and for standalone copies.
+6. Website integration and documentation updates.
+
+Phase 2 acceptance criteria:
+1. From a fresh copy of `scientific-starter/` outside the monorepo: `uv sync --locked`,
+   `uv run pytest`, `uv run ruff check .`, `uv run ruff format --check .`, and `uv build`
+   all succeed, and the built wheel installs and imports in an isolated environment.
+2. The known-answer case OD 0.1 → 0.2 over 0–2 h gives μ ≈ 0.34657359 /h and Td ≈ 2 h.
+3. Tests cover known answers, boundaries and invalid input (non-positive OD, NaN, ±inf,
+   non-increasing time, wrong types), zero and negative growth, Hypothesis properties, and
+   floating-point accuracy.
+4. At least one deliberately introduced bug is caught by the tests, and the correct
+   implementation is restored.
+5. Ruff includes the `S` security rules; the security checklist states that automated
+   checks cannot guarantee security.
+6. `AGENTS.md`/`CLAUDE.md` cover the ten assistant rules and the no-AI-attribution policy.
+7. Run metadata contains no host name, user name, absolute path, or credential.
+8. The website's starter-kit page lists only implemented features, explains that the
+   starter is a monorepo folder, and is verified against the files by tests.
+9. All Phase 1 website checks still pass.
 
 ### Phase 3 — Scientific demonstration
 - Bacterial growth curve analysis built with the starter kit

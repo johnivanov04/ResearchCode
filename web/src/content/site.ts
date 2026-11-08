@@ -4,6 +4,7 @@ export const site = {
   description:
     "Open-source guides and a starter toolkit that help researchers use AI coding assistants to build correct, maintainable, reproducible scientific software.",
   context: "A Caltech CS/EE 143 special project",
+  repository: "https://github.com/johnivanov04/ResearchCode",
 } as const;
 
 export type NavItem = {

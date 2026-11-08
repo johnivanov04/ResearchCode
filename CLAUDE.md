@@ -13,7 +13,8 @@ Plan and phase status: `docs/PROJECT_PLAN.md`.
 
 ## Repository layout
 - `web/` — Next.js 16 App Router site (TypeScript, Tailwind v4). Work from this directory.
-- `scientific-starter/` — Python template (Phase 2, not created yet).
+- `scientific-starter/` — copyable Python starter project (Phase 2). It has its own `AGENTS.md`/`CLAUDE.md`
+  for researchers' projects; follow them when working inside it.
 - `experiments/` — study protocol and results (Phase 4, not created yet).
 - `docs/` — plans and design docs.
 
@@ -40,6 +41,23 @@ npm test
 npm run build
 ```
 `npm run check` runs all four. CI (`.github/workflows/web.yml`) runs the same steps.
+
+## Starter kit conventions (`scientific-starter/`)
+- Keep it self-contained: no references to files outside the folder, no runtime dependencies
+  unless clearly necessary, no license until the owner chooses one.
+- `web/src/content/starter-kit.ts` describes it on the website; tests check that its paths exist
+  and its commands appear in `scientific-starter/README.md`. Update both together.
+- Verify from `scientific-starter/` before finishing any change:
+```bash
+uv sync --locked
+uv run pytest
+uv run ruff check .
+uv run ruff format --check .
+uv build
+```
+- On macOS, if the repo is in an iCloud-synced folder (Desktop/Documents), sync can mark
+  `.venv/*.pth` files hidden and Python then skips them (`ModuleNotFoundError`). Set
+  `UV_PROJECT_ENVIRONMENT` to a directory outside iCloud, or move the repo.
 
 ## Safety
 - Do not push, deploy, or take irreversible actions without explicit approval.

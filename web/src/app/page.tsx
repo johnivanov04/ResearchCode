@@ -60,10 +60,10 @@ const toolkit: { title: string; body: string; href: string; status: Status; cta:
   },
   {
     title: "Scientific Python starter kit",
-    body: "A project template with uv, pytest, Ruff, GitHub Actions, and instructions for AI assistants.",
+    body: "A working project template with uv, pytest, Hypothesis, Ruff, GitHub Actions, and instructions for AI assistants.",
     href: "/starter-kit",
-    status: "planned",
-    cta: "See what is planned",
+    status: "available",
+    cta: "Use the starter kit",
   },
   {
     title: "Worked example",
