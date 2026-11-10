@@ -1,0 +1,315 @@
+{
+  "schema_version": 1,
+  "input": {
+    "file": "synthetic_plate.csv",
+    "time_column": "time_min",
+    "ignored_columns": []
+  },
+  "settings": {
+    "blank_method": "mean",
+    "blank_label": "blank",
+    "min_od": 0.005,
+    "blank_sd_multiple": 10.0,
+    "max_od": null,
+    "window_points": 5,
+    "min_relative_rate": 0.8,
+    "min_fold_change": 2.0,
+    "min_r_squared": 0.98,
+    "max_relative_se": 0.1,
+    "reference_condition": null
+  },
+  "blank": {
+    "method": "mean",
+    "label": "blank",
+    "wells": [
+      "A1",
+      "A2",
+      "A3"
+    ],
+    "n_readings": 195,
+    "value": 0.040030769230769224,
+    "sd": 0.0010547276597121069,
+    "min_reading": 0.037,
+    "max_reading": 0.043,
+    "quantification_limit": 0.010547276597121069
+  },
+  "assumptions": [
+    "Blank-corrected OD600 is proportional to cell density within the fitted range.",
+    "The blank is constant over time and the same for every sample well.",
+    "Errors in ln(OD) are independent with constant variance (used for the standard error).",
+    "Wells are independent replicates as labelled by their condition.",
+    "Natural logarithms are used; time is in hours, rates in 1/h, doubling times in h.",
+    "The reported growth rate is the least-squares slope of ln(OD) over the detected exponential phase: an average rate over that interval, not a model parameter such as a logistic intrinsic rate."
+  ],
+  "warnings": [
+    "well D2: no growth",
+    "well D3: no growth",
+    "well D4: no growth"
+  ],
+  "wells": [
+    {
+      "well": "B2",
+      "condition": "condition_A",
+      "status": "growth",
+      "credible": true,
+      "flags": [
+        "phase_starts_at_first_valid_reading"
+      ],
+      "growth_rate_per_h": 0.9243012468509265,
+      "growth_rate_se_per_h": 0.0090802983725078,
+      "doubling_time_h": 0.7499147955512145,
+      "r_squared": 0.9988432174413032,
+      "n_points_in_phase": 14,
+      "phase_start_h": 3.25,
+      "phase_end_h": 6.5,
+      "fold_change_in_phase": 20.16561754120945,
+      "fit_intercept_ln_od": -7.262594151557227,
+      "steepest_window_rate_per_h": 1.000403051166305,
+      "net_rate_per_h": 0.2846007673072201,
+      "n_readings": 65,
+      "n_valid": 52,
+      "n_below_quantification_limit": 13,
+      "n_above_max_od": 0
+    },
+    {
+      "well": "B3",
+      "condition": "condition_A",
+      "status": "growth",
+      "credible": true,
+      "flags": [
+        "phase_starts_at_first_valid_reading"
+      ],
+      "growth_rate_per_h": 0.9233848966139618,
+      "growth_rate_se_per_h": 0.01631112621612584,
+      "doubling_time_h": 0.7506589972412429,
+      "r_squared": 0.996269556481799,
+      "n_points_in_phase": 14,
+      "phase_start_h": 3.0,
+      "phase_end_h": 6.25,
+      "fold_change_in_phase": 20.105650882691286,
+      "fit_intercept_ln_od": -7.242012037506976,
+      "steepest_window_rate_per_h": 1.011403184070232,
+      "net_rate_per_h": 0.2978920872490657,
+      "n_readings": 65,
+      "n_valid": 53,
+      "n_below_quantification_limit": 12,
+      "n_above_max_od": 0
+    },
+    {
+      "well": "B4",
+      "condition": "condition_A",
+      "status": "growth",
+      "credible": true,
+      "flags": [
+        "phase_starts_at_first_valid_reading"
+      ],
+      "growth_rate_per_h": 0.9628775665388064,
+      "growth_rate_se_per_h": 0.014936462716644542,
+      "doubling_time_h": 0.7198705262721579,
+      "r_squared": 0.9973600358543085,
+      "n_points_in_phase": 13,
+      "phase_start_h": 3.0,
+      "phase_end_h": 6.0,
+      "fold_change_in_phase": 17.96872415410632,
+      "fit_intercept_ln_od": -7.425611585363749,
+      "steepest_window_rate_per_h": 1.0791750137861622,
+      "net_rate_per_h": 0.2987859452406381,
+      "n_readings": 65,
+      "n_valid": 53,
+      "n_below_quantification_limit": 12,
+      "n_above_max_od": 0
+    },
+    {
+      "well": "C2",
+      "condition": "condition_B",
+      "status": "growth",
+      "credible": true,
+      "flags": [],
+      "growth_rate_per_h": 0.5890531444683095,
+      "growth_rate_se_per_h": 0.026084080512609433,
+      "doubling_time_h": 1.1767141675910975,
+      "r_squared": 0.9902909902121833,
+      "n_points_in_phase": 7,
+      "phase_start_h": 2.5,
+      "phase_end_h": 4.0,
+      "fold_change_in_phase": 2.419545509895253,
+      "fit_intercept_ln_od": -5.228923330706222,
+      "steepest_window_rate_per_h": 0.6533456466000072,
+      "net_rate_per_h": 0.2837107007670425,
+      "n_readings": 65,
+      "n_valid": 60,
+      "n_below_quantification_limit": 5,
+      "n_above_max_od": 0
+    },
+    {
+      "well": "C3",
+      "condition": "condition_B",
+      "status": "growth",
+      "credible": true,
+      "flags": [],
+      "growth_rate_per_h": 0.6543348654272861,
+      "growth_rate_se_per_h": 0.025703226585699887,
+      "doubling_time_h": 1.059315676396541,
+      "r_squared": 0.9923439038945443,
+      "n_points_in_phase": 7,
+      "phase_start_h": 1.25,
+      "phase_end_h": 2.75,
+      "fold_change_in_phase": 2.6684620577997284,
+      "fit_intercept_ln_od": -5.326426177334748,
+      "steepest_window_rate_per_h": 0.7089245980086474,
+      "net_rate_per_h": 0.28774748288139673,
+      "n_readings": 65,
+      "n_valid": 61,
+      "n_below_quantification_limit": 4,
+      "n_above_max_od": 0
+    },
+    {
+      "well": "C4",
+      "condition": "condition_B",
+      "status": "growth",
+      "credible": true,
+      "flags": [],
+      "growth_rate_per_h": 0.6552684487570514,
+      "growth_rate_se_per_h": 0.019350510969618685,
+      "doubling_time_h": 1.0578064331874124,
+      "r_squared": 0.9930718541641815,
+      "n_points_in_phase": 10,
+      "phase_start_h": 1.75,
+      "phase_end_h": 4.0,
+      "fold_change_in_phase": 4.3682130380620325,
+      "fit_intercept_ln_od": -5.41905011796095,
+      "steepest_window_rate_per_h": 0.7355379173599108,
+      "net_rate_per_h": 0.2878297110599129,
+      "n_readings": 65,
+      "n_valid": 61,
+      "n_below_quantification_limit": 4,
+      "n_above_max_od": 0
+    },
+    {
+      "well": "D2",
+      "condition": "condition_C",
+      "status": "no_growth",
+      "credible": false,
+      "flags": [
+        "less_than_min_fold_change_in_phase"
+      ],
+      "growth_rate_per_h": null,
+      "growth_rate_se_per_h": null,
+      "doubling_time_h": null,
+      "r_squared": 0.8996478325832238,
+      "n_points_in_phase": 5,
+      "phase_start_h": 13.0,
+      "phase_end_h": 14.0,
+      "fold_change_in_phase": 1.1103898298598314,
+      "fit_intercept_ln_od": -4.4147196889683595,
+      "steepest_window_rate_per_h": 0.10471115174055523,
+      "net_rate_per_h": -0.00014772174975622232,
+      "n_readings": 65,
+      "n_valid": 65,
+      "n_below_quantification_limit": 0,
+      "n_above_max_od": 0
+    },
+    {
+      "well": "D3",
+      "condition": "condition_C",
+      "status": "no_growth",
+      "credible": false,
+      "flags": [
+        "less_than_min_fold_change_in_phase"
+      ],
+      "growth_rate_per_h": null,
+      "growth_rate_se_per_h": null,
+      "doubling_time_h": null,
+      "r_squared": 0.7650731495556249,
+      "n_points_in_phase": 5,
+      "phase_start_h": 2.75,
+      "phase_end_h": 3.75,
+      "fold_change_in_phase": 1.1000252355868478,
+      "fit_intercept_ln_od": -3.3109389136438123,
+      "steepest_window_rate_per_h": 0.09533312098376286,
+      "net_rate_per_h": 0.0010087051916901327,
+      "n_readings": 65,
+      "n_valid": 65,
+      "n_below_quantification_limit": 0,
+      "n_above_max_od": 0
+    },
+    {
+      "well": "D4",
+      "condition": "condition_C",
+      "status": "no_growth",
+      "credible": false,
+      "flags": [
+        "less_than_min_fold_change_in_phase"
+      ],
+      "growth_rate_per_h": null,
+      "growth_rate_se_per_h": null,
+      "doubling_time_h": null,
+      "r_squared": 0.844085453468503,
+      "n_points_in_phase": 5,
+      "phase_start_h": 11.5,
+      "phase_end_h": 12.5,
+      "fold_change_in_phase": 1.1001881961972613,
+      "fit_intercept_ln_od": -4.134825832571341,
+      "steepest_window_rate_per_h": 0.09548125262259148,
+      "net_rate_per_h": -0.0006226998295553475,
+      "n_readings": 65,
+      "n_valid": 65,
+      "n_below_quantification_limit": 0,
+      "n_above_max_od": 0
+    }
+  ],
+  "conditions": [
+    {
+      "condition": "condition_A",
+      "n_wells": 3,
+      "n_credible": 3,
+      "mean_growth_rate_per_h": 0.9368545700012315,
+      "sd_growth_rate_per_h": 0.022541233019406227,
+      "sem_growth_rate_per_h": 0.013014186951620267,
+      "min_growth_rate_per_h": 0.9233848966139618,
+      "max_growth_rate_per_h": 0.9628775665388064,
+      "doubling_time_of_mean_rate_h": 0.739866360004023,
+      "ratio_to_reference": null,
+      "status_counts": {
+        "growth": 3
+      },
+      "wells_not_included": {}
+    },
+    {
+      "condition": "condition_B",
+      "n_wells": 3,
+      "n_credible": 3,
+      "mean_growth_rate_per_h": 0.6328854862175489,
+      "sd_growth_rate_per_h": 0.037962791413106045,
+      "sem_growth_rate_per_h": 0.02191782784154639,
+      "min_growth_rate_per_h": 0.5890531444683095,
+      "max_growth_rate_per_h": 0.6552684487570514,
+      "doubling_time_of_mean_rate_h": 1.0952173744772555,
+      "ratio_to_reference": null,
+      "status_counts": {
+        "growth": 3
+      },
+      "wells_not_included": {}
+    },
+    {
+      "condition": "condition_C",
+      "n_wells": 3,
+      "n_credible": 0,
+      "mean_growth_rate_per_h": null,
+      "sd_growth_rate_per_h": null,
+      "sem_growth_rate_per_h": null,
+      "min_growth_rate_per_h": null,
+      "max_growth_rate_per_h": null,
+      "doubling_time_of_mean_rate_h": null,
+      "ratio_to_reference": null,
+      "status_counts": {
+        "no_growth": 3
+      },
+      "wells_not_included": {
+        "D2": "no_growth",
+        "D3": "no_growth",
+        "D4": "no_growth"
+      }
+    }
+  ]
+}

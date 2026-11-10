@@ -42,7 +42,7 @@ const benefits = [
 ];
 
 const notIncluded = [
-  "Growth-curve fitting over many readings, phase detection, or replicate handling. The example covers two readings only; the full analysis is planned for Phase 3.",
+  "Growth-curve fitting over many readings, phase detection, or replicate handling. The starter's example covers two readings only; the full analysis is a separate application built from the starter (see below).",
   "A separate GitHub template repository or a published package. You copy a folder, as described above.",
   "Testing on Windows or macOS in CI. The workflow runs on Ubuntu with Python 3.12 and 3.13.",
   "A license. ResearchCode has not chosen one yet.",
@@ -231,8 +231,8 @@ export default function StarterKitPage() {
           </div>
         </div>
         <p className="mt-6 max-w-2xl leading-7 text-body">
-          The <Link href="/example" className={inlineLink}>example page</Link> shows what goes wrong in the full
-          growth-curve analysis, and the{" "}
+          The <Link href="/example" className={inlineLink}>example page</Link> shows what goes wrong in a full
+          growth-curve analysis and presents growth-analysis, a working application built from this starter. The{" "}
           <Link href="/guides/writing-specifications" className={inlineLink}>specification guide</Link> explains how to
           write a specification like the one in the starter.
         </p>
@@ -245,6 +245,13 @@ export default function StarterKitPage() {
           ))}
         </ul>
         <p className="mt-6 max-w-3xl leading-7 text-body">
+          For a complete multi-well analysis built from this starter, see{" "}
+          <Link href="/example#application" className={inlineLink}>
+            the growth-analysis application
+          </Link>
+          .
+        </p>
+        <p className="mt-4 max-w-3xl leading-7 text-body">
           Automated checks cannot guarantee correct or secure software. The starter makes many mistakes visible early;
           a person still has to review every change and decide whether the science is right.
         </p>

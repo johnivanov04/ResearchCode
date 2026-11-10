@@ -1,0 +1,57 @@
+{
+  "created_utc": "2026-11-10T21:36:56+00:00",
+  "git": {
+    "commit": "bb3aedf4c4a474f61dddbc010b1067ee81d40eb6",
+    "uncommitted_changes": true
+  },
+  "inputs": [
+    {
+      "name": "synthetic_plate.csv",
+      "sha256": "1e5c4dfdbefd9efa0e4144cb7242e312f55cb05259dbb5a8f800c886e50c137e",
+      "size_bytes": 18264
+    }
+  ],
+  "lockfile_sha256": "9f7f52f63d43a7e4186a98bdf042ca27e383433c762af7cf09f65d033a7fb30a",
+  "packages": {
+    "growth-analysis": "0.1.0",
+    "matplotlib": "3.11.2",
+    "numpy": "2.5.4"
+  },
+  "parameters": {
+    "analysis": {
+      "blank_label": "blank",
+      "blank_method": "mean",
+      "blank_sd_multiple": 10.0,
+      "max_od": null,
+      "max_relative_se": 0.1,
+      "min_fold_change": 2.0,
+      "min_od": 0.005,
+      "min_r_squared": 0.98,
+      "min_relative_rate": 0.8,
+      "reference_condition": null,
+      "window_points": 5
+    },
+    "assumptions": [
+      "Blank-corrected OD600 is proportional to cell density within the fitted range.",
+      "The blank is constant over time and the same for every sample well.",
+      "Errors in ln(OD) are independent with constant variance (used for the standard error).",
+      "Wells are independent replicates as labelled by their condition.",
+      "Natural logarithms are used; time is in hours, rates in 1/h, doubling times in h.",
+      "The reported growth rate is the least-squares slope of ln(OD) over the detected exponential phase: an average rate over that interval, not a model parameter such as a logistic intrinsic rate."
+    ],
+    "figure_formats": [
+      "png"
+    ],
+    "per_well_figures": true
+  },
+  "platform": {
+    "machine": "arm64",
+    "system": "Darwin"
+  },
+  "python": {
+    "implementation": "CPython",
+    "version": "3.12.14"
+  },
+  "random_seed": null,
+  "schema_version": 1
+}

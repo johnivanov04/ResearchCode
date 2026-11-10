@@ -1,0 +1,116 @@
+# Tests the Phase 3 scientific demonstration in growth-analysis/.
+#
+# The project is copied out of the monorepo before testing, so every run also proves that it
+# works as an independent project. Its own .github/workflows/ci.yml performs the same steps
+# once a copy becomes a repository root.
+
+name: Growth analysis
+
+on:
+  push:
+    branches: [main]
+    paths: ["growth-analysis/**", ".github/workflows/growth-analysis.yml"]
+  pull_request:
+    paths: ["growth-analysis/**", ".github/workflows/growth-analysis.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: growth-analysis-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Growth analysis on Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13"]
+    env:
+      HYPOTHESIS_PROFILE: ci
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Copy the project out of the monorepo
+        run: cp -R growth-analysis "$RUNNER_TEMP/growth-analysis"
+
+      # setup-uv publishes only full version tags (there is no moving "v10" tag).
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          version: "0.12.19"
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+          working-directory: ${{ runner.temp }}/growth-analysis
+
+      - name: Install from the lock file
+        working-directory: ${{ runner.temp }}/growth-analysis
+        run: uv sync --locked
+
+      - name: Lint (including security rules)
+        working-directory: ${{ runner.temp }}/growth-analysis
+        run: uv run ruff check .
+
+      - name: Check formatting
+        working-directory: ${{ runner.temp }}/growth-analysis
+        run: uv run ruff format --check .
+
+      - name: Run the scientific test suite
+        working-directory: ${{ runner.temp }}/growth-analysis
+        run: uv run pytest
+
+      - name: Build the package
+        working-directory: ${{ runner.temp }}/growth-analysis
+        run: uv build
+
+      - name: Install the built wheel in a clean environment and run its command
+        working-directory: ${{ runner.temp }}/growth-analysis
+        run: |
+          uv run --isolated --no-project --with dist/*.whl python -c "import growth_analysis"
+          uv run --isolated --no-project --with dist/*.whl growth-analyze --version
+
+      - name: Analyse the synthetic sample plate (documented command)
+        working-directory: ${{ runner.temp }}/growth-analysis
+        run: uv run growth-analyze --input data/sample/synthetic_plate.csv --output results/ci
+
+      - name: Check that every expected output file was produced
+        working-directory: ${{ runner.temp }}/growth-analysis
+        run: |
+          for file in results.json well_results.csv condition_summary.csv points.csv \
+              run_metadata.json; do
+            test -s "results/ci/$file" || { echo "missing or empty: $file"; exit 1; }
+          done
+          for figure in growth_curves exponential_fits growth_rate_comparison; do
+            for format in png svg; do
+              test -s "results/ci/figures/$figure.$format" \
+                || { echo "missing or empty: $figure.$format"; exit 1; }
+            done
+          done
+          uv run python -c "import json; json.load(open('results/ci/results.json')); json.load(open('results/ci/run_metadata.json'))"
+
+      - name: Check that existing results are never overwritten
+        working-directory: ${{ runner.temp }}/growth-analysis
+        run: |
+          if uv run growth-analyze --input data/sample/synthetic_plate.csv --output results/ci; then
+            echo "existing results were overwritten"
+            exit 1
+          fi
+
+      - name: Check that a rerun gives identical results
+        working-directory: ${{ runner.temp }}/growth-analysis
+        run: |
+          uv run growth-analyze --input data/sample/synthetic_plate.csv --output results/rerun
+          for file in results.json well_results.csv condition_summary.csv points.csv; do
+            cmp "results/ci/$file" "results/rerun/$file"
+          done
+
+      - name: Upload the sample results for inspection
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: growth-analysis-results-py${{ matrix.python-version }}
+          path: ${{ runner.temp }}/growth-analysis/results/
+          if-no-files-found: ignore
+          retention-days: 14

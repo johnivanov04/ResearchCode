@@ -15,6 +15,8 @@ Plan and phase status: `docs/PROJECT_PLAN.md`.
 - `web/` — Next.js 16 App Router site (TypeScript, Tailwind v4). Work from this directory.
 - `scientific-starter/` — copyable Python starter project (Phase 2). It has its own `AGENTS.md`/`CLAUDE.md`
   for researchers' projects; follow them when working inside it.
+- `growth-analysis/` — growth-curve analysis application built from the starter (Phase 3). It has its own
+  `AGENTS.md`/`CLAUDE.md`; follow them, and change `docs/spec-growth-curve.md` before changing the method.
 - `experiments/` — study protocol and results (Phase 4, not created yet).
 - `docs/` — plans and design docs.
 
@@ -58,6 +60,15 @@ uv build
 - On macOS, if the repo is in an iCloud-synced folder (Desktop/Documents), sync can mark
   `.venv/*.pth` files hidden and Python then skips them (`ModuleNotFoundError`). Set
   `UV_PROJECT_ENVIRONMENT` to a directory outside iCloud, or move the repo.
+
+## Growth-analysis conventions (`growth-analysis/`)
+- Keep it self-contained (copied out of the monorepo in CI). All bundled data are synthetic; label them so.
+- `web/src/content/growth-analysis.ts` shows its results, commands, and figures on `/example`; tests check them
+  against `growth-analysis/` (README commands, `docs/example-output/`, `web/public/growth-analysis/` copies).
+- If the method's output changes on purpose, regenerate `docs/example-output/` with the commands in its README,
+  review the differences, and update the website content and figure copies together.
+- Verify from `growth-analysis/` with the same five uv commands as the starter, plus
+  `uv run growth-analyze --input data/sample/synthetic_plate.csv --output <new dir>`.
 
 ## Safety
 - Do not push, deploy, or take irreversible actions without explicit approval.
