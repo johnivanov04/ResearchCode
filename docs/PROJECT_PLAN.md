@@ -20,6 +20,7 @@ is new. No existing history or files had to be preserved beyond `.git/`.
 ResearchCode/
 ├── web/                  Next.js website (Phase 1)
 ├── scientific-starter/   Python starter template (Phase 2)
+├── growth-analysis/      Bacterial growth-curve analysis application (Phase 3)
 ├── experiments/          Experiment protocol, tasks, raw results (Phase 4, not yet created)
 ├── docs/                 Design docs, methodology, plans
 ├── .github/workflows/    CI
@@ -60,13 +61,13 @@ browsers. End-to-end browser tests are a reasonable Phase 5 addition.
 | `/guides`               | Index of guides                                                     |
 | `/guides/[slug]`        | Individual guide (statically generated from content modules)        |
 | `/starter-kit`          | The Python starter: contents, setup, copy instructions, limits      |
-| `/example`              | Bacterial growth analysis as a representative task; pitfalls        |
+| `/example`              | Growth-rate task, pitfalls, and the working growth-analysis app     |
 | `/evaluation`           | Proposed vibe-coding vs structured-workflow study; no results yet   |
 | `/about`                | Academic context, mission, roadmap                                  |
 
 ## 3. Milestones
 
-### Phase 1 — Website and foundation (this phase)
+### Phase 1 — Website and foundation (status: complete)
 - Project plan, README, CLAUDE.md
 - Next.js site with six sections and three substantial guides
 - Accessibility basics: semantic landmarks, skip link, focus styles, labelled nav,
@@ -80,7 +81,7 @@ browsers. End-to-end browser tests are a reasonable Phase 5 addition.
 - Component tests for rendering and navigation
 - CI workflow running lint, typecheck, tests, build
 
-### Phase 2 — Scientific Python starter kit (implemented on `feat/phase-2-starter`)
+### Phase 2 — Scientific Python starter kit (status: complete, merged in PR #1)
 
 A self-contained, copyable Python project in `scientific-starter/`. It has no runtime
 dependencies, works independently of the website, and lives in this monorepo as a folder
@@ -127,10 +128,52 @@ Phase 2 acceptance criteria:
    starter is a monorepo folder, and is verified against the files by tests.
 9. All Phase 1 website checks still pass.
 
-### Phase 3 — Scientific demonstration
-- Bacterial growth curve analysis built with the starter kit
-- Validation against analytically known synthetic curves; documented assumptions
-- Example page links to real code and real outputs
+### Phase 3 — Scientific demonstration (status: in progress; implemented on `feat/phase-3-scientific-demo`, awaiting review)
+
+A complete bacterial growth-curve analysis application in `growth-analysis/`, created from a
+copy of `scientific-starter/` to demonstrate how a researcher uses the starter kit. It is a
+self-contained uv project, independent of the website and of the starter folder.
+
+| Concern | Decision and reasoning |
+| ------- | ---------------------- |
+| Location | `growth-analysis/` in the monorepo (package `growth_analysis`, command `growth-analyze`). The starter is unchanged. |
+| Dependencies | NumPy and Matplotlib (added with `uv add`). Pandas was not added: the standard `csv` module gives line-level control over validation. No SciPy: no model fitting or hypothesis tests are needed. |
+| Input | Long-format CSV: `well`, `condition`, `od600`, and exactly one of `time_h`/`time_min`/`time_s` (the unit is part of the column name). Blank wells use the condition `blank`. Every problem (missing values, non-numbers, NaN/inf, duplicates, unsorted times, conflicting conditions, wrong field counts) is reported with its line number; nothing is dropped. |
+| Blank and limit | Mean of blank wells subtracted. Quantification limit max(0.005, 10 × blank SD); readings below it are excluded with a recorded reason. |
+| Method | Least-squares slopes of ln(OD) in five-reading windows; start at the steepest window and extend over neighbouring windows with slope ≥ 0.8 × steepest; one least-squares fit over the whole region gives μ, SE(μ), R²; Td = ln 2 / μ. Statuses `growth`, `no_growth`, `decline`, `insufficient_data`; `growth` is credible only with R² ≥ 0.98, SE/μ ≤ 0.10, and no excluded reading inside the phase. |
+| Why this method | A design study (`growth-analysis/docs/method-study.md`, reproducible with `scripts/method_study.py`) showed the steepest-window method used in the guide overestimates μ by about 3–16% on noisy data, and that a 3-SD blank threshold biased estimates upward. Both findings changed the method; the specification records why. The study also measures a remaining upward bias (about 7%) for slow growth near the quantification limit, documented as a known limitation. All validation is on synthetic data. |
+| Outputs | `well_results.csv`, `condition_summary.csv`, `points.csv`, `results.json`, figures (growth curves, per-well fits, comparison by condition; PNG and SVG), `run_metadata.json` (starter's `provenance.py`). Nothing is overwritten without `--overwrite`, checked before writing anything. |
+| Validation | Known answers from mathematics (exact exponential data; the logistic derivative bound r(1 − x_end/K) ≤ μ ≤ r(1 − x_start/K); rounding error bound for the website's curve); seeded noise; a bias study; Hypothesis invariances; exact rational least squares; end-to-end CLI tests; regression tests against committed example outputs; deliberately introduced bugs. |
+| Data | Synthetic only, generated with fixed seeds by `synthetic.py` and labelled synthetic everywhere: a 12-well sample plate and the website's illustrative well (checked to match `web/src/lib/growth.ts`). |
+| CI | `.github/workflows/growth-analysis.yml` copies the project out of the monorepo and on Python 3.12 and 3.13 runs `uv sync --locked`, Ruff, pytest (2000 Hypothesis examples), `uv build`, the wheel's command, the documented CLI on the sample data, output-file checks, an overwrite-refusal check, and a byte-identical rerun check. `web.yml` also triggers on `growth-analysis/**`. |
+| Website | `/example` presents the application (status Available), its method, real committed outputs and figures, setup and usage, and how the starter kit shaped it. `web/src/content/growth-analysis.ts` holds every displayed fact; `growth-analysis.test.ts` checks numbers, paths, commands, and figures against the application's files. |
+
+Phase 3 milestones:
+1. Specification (`docs/spec-growth-curve.md`) from the starter's template.
+2. Input validation, blank correction, exponential-phase detection, credibility, condition summaries.
+3. Plots and the command-line tool, with provenance and no-overwrite safety.
+4. Design study of the method's defaults on synthetic data; method revised where it found bias.
+5. Validation tests, property tests, end-to-end and regression tests; deliberate-bug check.
+6. Documentation, CI, and website integration.
+
+Phase 3 acceptance criteria:
+1. From a fresh copy of `growth-analysis/`: `uv sync --locked`, `uv run pytest`, `uv run ruff check .`,
+   `uv run ruff format --check .`, and `uv build` succeed on Python 3.12 and 3.13, and the built
+   wheel's `growth-analyze` command runs.
+2. `uv run growth-analyze --input data/sample/synthetic_plate.csv --output results/sample` writes every
+   documented output, refuses to overwrite, and reruns byte-identically.
+3. Exact exponential data give μ to 1e-9 relative; logistic data obey the derivative bound and never
+   exceed r; the website's curve satisfies the bound widened by its rounding error; the mean bias over
+   200 noisy curves is under 2% and smaller than the steepest window's.
+4. Zero growth, decline, stationary phase, too few readings, readings below the limit, and invalid,
+   missing, or duplicated measurements each have tests with specified behaviour.
+5. At least one deliberately introduced bug is caught, and the correct code is restored.
+6. Run metadata records versions, settings, assumptions, input checksums, and the Git state, with no
+   host names, user names, or absolute paths.
+7. All sample data are labelled synthetic; no result is presented as an experimental finding.
+8. `/example` shows the application as Available only because the above pass, links to the source,
+   and is verified against the application's files by tests; all existing website and starter checks
+   still pass.
 
 ### Phase 4 — Controlled experiment
 - Pre-registered protocol in `experiments/` before any data collection

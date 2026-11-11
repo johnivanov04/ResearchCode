@@ -67,9 +67,9 @@ const toolkit: { title: string; body: string; href: string; status: Status; cta:
   },
   {
     title: "Worked example",
-    body: "Estimating bacterial growth rates: a small, realistic task with several ways to be silently wrong.",
+    body: "Estimating bacterial growth rates: a realistic task with several ways to be silently wrong, and a working, tested analysis application built with the starter kit.",
     href: "/example",
-    status: "in-progress",
+    status: "available",
     cta: "Explore the example",
   },
   {

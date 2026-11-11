@@ -1,0 +1,4 @@
+condition,n_wells,n_credible,mean_growth_rate_per_h,sd_growth_rate_per_h,sem_growth_rate_per_h,min_growth_rate_per_h,max_growth_rate_per_h,doubling_time_of_mean_rate_h,ratio_to_reference,wells_not_included
+condition_A,3,3,0.9368545700012315,0.022541233019406227,0.013014186951620267,0.9233848966139618,0.9628775665388064,0.739866360004023,,
+condition_B,3,3,0.6328854862175489,0.037962791413106045,0.02191782784154639,0.5890531444683095,0.6552684487570514,1.0952173744772555,,
+condition_C,3,0,,,,,,,,D2: no_growth;D3: no_growth;D4: no_growth

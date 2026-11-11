@@ -11,6 +11,7 @@ import HomePage from "@/app/page";
 import StarterKitPage from "@/app/starter-kit/page";
 import { guides } from "@/content/guides";
 import { primaryNav } from "@/content/site";
+import { appSourceUrl } from "@/content/growth-analysis";
 import { starterSourceUrl } from "@/content/starter-kit";
 
 const knownRoutes = new Set(["/", ...primaryNav.map((item) => item.href), ...guides.map((g) => `/guides/${g.slug}`)]);
@@ -77,8 +78,10 @@ describe("honesty requirements", () => {
     expect(container.textContent).toMatch(/not a separate GitHub template repository/);
     expect(container.textContent).toMatch(/no download package/);
     expect(container.querySelector(`a[href="${starterSourceUrl}"]`)).not.toBeNull();
-    // Scope limits stay visible: the full analysis is still planned.
-    expect(container.textContent).toMatch(/planned for Phase 3/);
+    // Scope limits stay visible: the starter's own example is small, and the full analysis is
+    // a separate application that the page links to.
+    expect(container.textContent).toMatch(/covers two readings only/);
+    expect(container.querySelector('a[href="/example#application"]')).not.toBeNull();
   });
 
   it("evaluation page presents a design with no results", () => {
@@ -91,6 +94,25 @@ describe("honesty requirements", () => {
     const { container } = render(<ExamplePage />);
     expect(container.textContent).toMatch(/All data on this page is illustrative/);
     expect(container.textContent).toMatch(/synthetic/i);
+    expect(container.textContent).toMatch(/none\s+of the numbers below is an experimental finding/);
+  });
+
+  it("example page presents the application as available, with its source and honest comparison", () => {
+    const { container } = render(<ExamplePage />);
+    expect(container.querySelector(`a[href="${appSourceUrl}"]`)).not.toBeNull();
+    expect(container.textContent).toMatch(/Available/);
+    expect(container.textContent).not.toMatch(/Planned/);
+    // The estimate is explained as differing from the intrinsic rate, not presented as 1.2.
+    expect(container.textContent).toMatch(/That is expected, not an error/);
+    // Known bias and the synthetic-only validation are stated, not hidden.
+    expect(container.textContent).toMatch(/7\.4% too high/);
+    expect(container.textContent).toMatch(/validated on synthetic data\s+only, not on real experimental measurements/);
+    // Every figure has descriptive alternative text.
+    const images = container.querySelectorAll("img");
+    expect(images.length).toBe(3);
+    for (const image of images) {
+      expect(image.getAttribute("alt")?.length ?? 0).toBeGreaterThan(40);
+    }
   });
 });
 

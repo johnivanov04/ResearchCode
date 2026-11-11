@@ -1,0 +1,2 @@
+well,condition,status,credible,growth_rate_per_h,growth_rate_se_per_h,doubling_time_h,r_squared,n_points_in_phase,phase_start_h,phase_end_h,fold_change_in_phase,steepest_window_rate_per_h,net_rate_per_h,n_readings,n_valid,n_below_quantification_limit,n_above_max_od,flags
+B3,illustrative,growth,true,1.1206252533842966,0.012106264383579255,0.618536106041369,0.9987178613267702,13,0.0,3.0,28.843243175050752,1.2003797639325111,0.32346490528974736,49,49,0,0,phase_starts_at_first_valid_reading

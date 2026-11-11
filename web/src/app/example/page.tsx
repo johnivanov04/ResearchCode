@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { Callout } from "@/components/callout";
 import { CodeBlock } from "@/components/code-block";
@@ -6,12 +7,30 @@ import { GrowthExplorer } from "@/components/growth-explorer";
 import { PageHeader, Section } from "@/components/page-header";
 import { PromptBlock } from "@/components/prompt-block";
 import { StatusBadge } from "@/components/status-badge";
-import { BLANK_OD, MIN_R2, illustrativeReadings } from "@/lib/growth";
+import {
+  appBlobUrl,
+  appMethodStudyUrl,
+  appReadmeUrl,
+  appSourceUrl,
+  appSpecUrl,
+  checkCommands,
+  figures,
+  methodSteps,
+  outputs,
+  ownDataCommand,
+  plateBias,
+  plateResults,
+  quickStart,
+  sampleInputPreview,
+  starterContributions,
+  websiteWellResult,
+} from "@/content/growth-analysis";
+import { BLANK_OD, MIN_R2, TRUE_RATE_PER_H, illustrativeReadings } from "@/lib/growth";
 
 export const metadata: Metadata = {
   title: "Example: bacterial growth analysis",
   description:
-    "Estimating bacterial growth rates from plate reader data: a representative scientific coding task, its silent failure modes, and how to validate the result.",
+    "Estimating bacterial growth rates from plate reader data: a representative scientific coding task, its silent failure modes, and a working, tested analysis application built with the ResearchCode starter kit.",
 };
 
 const pitfalls = [
@@ -45,7 +64,32 @@ const pitfalls = [
   },
 ];
 
+const inlineLink = "font-medium text-accent-700 underline underline-offset-2 hover:text-accent-800";
+
+function FigureBlock({ figure }: { figure: (typeof figures)[number] }) {
+  return (
+    <figure className="min-w-0 rounded-xl border border-line bg-white p-3">
+      <Image
+        src={figure.src}
+        alt={figure.alt}
+        width={figure.width}
+        height={figure.height}
+        unoptimized
+        className="h-auto w-full"
+      />
+      <figcaption className="mt-3 px-1 text-sm leading-6 text-muted">
+        {figure.caption}{" "}
+        <a href={`${appBlobUrl}/${figure.source}`} className={inlineLink}>
+          Full-size figure on GitHub
+        </a>
+        .
+      </figcaption>
+    </figure>
+  );
+}
+
 export default function ExamplePage() {
+  const [biasA, biasB] = plateBias;
   const readings = illustrativeReadings();
   const preview = readings.slice(0, 8);
   const csvPreview = ["time_min,od600", ...preview.map((r) => `${r.timeMin},${r.od.toFixed(3)}`), "..."].join("\n");
@@ -55,16 +99,22 @@ export default function ExamplePage() {
       <PageHeader eyebrow="Example" title="Estimating bacterial growth rates">
         <p>
           A short, common analysis with several ways to be silently wrong. We use it throughout ResearchCode
-          to show why specifications, tests, and review matter, even for code that looks simple.
+          to show why specifications, tests, and review matter, even for code that looks simple. It is also
+          the subject of a{" "}
+          <a href="#application" className={inlineLink}>
+            working analysis application
+          </a>{" "}
+          built with the ResearchCode starter kit.
         </p>
       </PageHeader>
 
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <Callout tone="honesty" title="All data on this page is illustrative">
-          The readings below are <strong>synthetic</strong>. They were generated from a logistic growth model
-          with a known rate of 1.2 per hour and a constant blank of {BLANK_OD}, then rounded to three decimals
-          like an instrument export. They do not describe any real organism or experiment. The full analysis
-          package, built with the ResearchCode starter kit, is planned for Phase 3.
+          Every reading on this page is <strong>synthetic</strong>. The interactive example uses a logistic
+          growth model with a known rate of 1.2 per hour and a constant blank of {BLANK_OD}, rounded to three
+          decimals like an instrument export. The application&apos;s sample plate was generated from models
+          with known parameters and seeded noise. None of it describes a real organism or experiment, and none
+          of the numbers below is an experimental finding.
         </Callout>
       </div>
 
@@ -217,16 +267,253 @@ export default function ExamplePage() {
         </details>
       </Section>
 
-      <Section id="status" eyebrow="What comes next" title="The full demonstration">
-        <div className="mt-6 flex flex-col gap-4 rounded-xl border border-line bg-surface p-6 sm:flex-row sm:items-start">
-          <StatusBadge status="planned" />
-          <p className="leading-7 text-body">
-            In Phase 3 we will build a complete growth-curve analysis package with the ResearchCode starter
-            kit: a written specification, a test suite with known-answer and property tests, multi-well input
-            handling, plots of every fit, and provenance records. This page will then link to the real code
-            and its outputs.
+      <Section
+        id="application"
+        eyebrow="Phase 3"
+        title="The working application: growth-analysis"
+        intro={
+          <>
+            <p>
+              <code className="font-mono text-[0.9375rem]">growth-analysis</code> is a command-line tool that
+              reads optical density time courses for many wells, finds each well&apos;s exponential phase,
+              estimates the specific growth rate and doubling time, judges whether each fit is credible, plots
+              every fit, and summarises replicate wells by condition. It was built from the{" "}
+              <Link href="/starter-kit" className={inlineLink}>
+                starter kit
+              </Link>
+              , following a written specification and validated against known answers on synthetic data.
+            </p>
+          </>
+        }
+      >
+        <div className="mt-8 flex flex-col gap-4 rounded-xl border border-line bg-surface p-6 sm:flex-row sm:items-start">
+          <StatusBadge status="available" />
+          <div className="leading-7 text-body">
+            <p>
+              The source, specification, tests, synthetic sample data, and example outputs are in the{" "}
+              <a href={appSourceUrl} className={inlineLink}>
+                growth-analysis folder of the ResearchCode repository
+              </a>
+              . Like the starter kit, it is a folder you clone or copy, not a published package. Read the{" "}
+              <a href={appReadmeUrl} className={inlineLink}>
+                README
+              </a>{" "}
+              for every option and output.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-10 max-w-4xl">
+          <h3 className="text-lg font-semibold text-ink">Run it on the sample data</h3>
+          <p className="mt-2 leading-7 text-body">
+            Install <a href="https://docs.astral.sh/uv/" className={inlineLink}>uv</a> once; it also installs
+            Python. Then:
+          </p>
+          <CodeBlock code={quickStart} language="bash" title="Terminal" />
+          <p className="leading-7 text-body">For your own plate, export it in the same format and run:</p>
+          <CodeBlock code={ownDataCommand} language="bash" title="Terminal" />
+          <p className="leading-7 text-body">The checks that CI runs on every change:</p>
+          <CodeBlock code={checkCommands} language="bash" title="Terminal" />
+        </div>
+
+        <div className="mt-6 grid gap-8 lg:grid-cols-2">
+          <div className="min-w-0">
+            <h3 className="text-lg font-semibold text-ink">Input: one row per reading</h3>
+            <p className="mt-2 leading-7 text-body">
+              Columns <code className="font-mono text-sm">well</code>,{" "}
+              <code className="font-mono text-sm">condition</code>,{" "}
+              <code className="font-mono text-sm">od600</code>, and a time column whose name states its unit (
+              <code className="font-mono text-sm">time_h</code>, <code className="font-mono text-sm">time_min</code>,
+              or <code className="font-mono text-sm">time_s</code>). Blank wells use the condition{" "}
+              <code className="font-mono text-sm">blank</code>.
+            </p>
+            <CodeBlock code={sampleInputPreview} language="csv" title="data/sample/synthetic_plate.csv (synthetic, first rows)" />
+          </div>
+          <div className="min-w-0">
+            <h3 className="text-lg font-semibold text-ink">Output</h3>
+            <dl className="mt-3 divide-y divide-line rounded-xl border border-line bg-white">
+              {outputs.map((output) => (
+                <div key={output.file} className="px-4 py-3 sm:grid sm:grid-cols-[13.5rem_minmax(0,1fr)] sm:gap-4">
+                  <dt className="font-mono text-sm text-ink [overflow-wrap:anywhere]">{output.file}</dt>
+                  <dd className="mt-1 text-sm leading-6 text-body sm:mt-0">{output.contents}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </div>
+      </Section>
+
+      <Section
+        id="method"
+        eyebrow="Method"
+        title="How the growth rate is estimated"
+        intro={
+          <p>
+            During exponential growth, OD(t) = OD₀·e<sup>μt</sup>, so ln OD(t) = ln OD₀ + μt is a straight line
+            whose slope is the specific growth rate μ, and the doubling time is ln 2 / μ. The work is in choosing
+            which readings belong to that straight line. The full rules are in the{" "}
+            <a href={appSpecUrl} className={inlineLink}>
+              specification
+            </a>
+            .
+          </p>
+        }
+      >
+        <ol className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          {methodSteps.map((step, index) => (
+            <li key={step.title} className="flex gap-4 rounded-xl border border-line bg-white p-5">
+              <span className="font-mono text-sm font-medium text-accent-700">{String(index + 1).padStart(2, "0")}</span>
+              <div>
+                <h3 className="font-semibold text-ink">{step.title}</h3>
+                <p className="mt-2 text-[0.96875rem] leading-7 text-body">{step.body}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+
+        <div className="mt-10 max-w-3xl rounded-xl border border-line bg-surface p-6">
+          <h3 className="font-semibold text-ink">Why not report the steepest window?</h3>
+          <p className="mt-2 leading-7 text-body">
+            The interactive example above, like many analyses, reports the steepest one-hour window. With noisy
+            readings, the steepest of many windows is biased upward: in a{" "}
+            <a href={appMethodStudyUrl} className={inlineLink}>
+              study on synthetic data
+            </a>
+            , on exponential curves with noise proportional to OD, it overestimated the rate by about 3%, 9%,
+            and 16% at increasing noise levels, while the application&apos;s estimate was off by 0.0%, 0.2%,
+            and 3.2%. The same study showed that keeping readings within three blank standard deviations let
+            noise near the blank inflate the estimates, which is why the application requires ten. It also
+            showed that this does not remove the problem: for slow growth starting near that limit, estimates
+            remain biased upward (section below).
           </p>
         </div>
+      </Section>
+
+      <Section
+        id="results"
+        eyebrow="Example output"
+        title="What the application reports on synthetic data"
+        intro={
+          <p>
+            These results are the application&apos;s actual output, committed to the repository and checked by
+            the website&apos;s tests. Because the data are synthetic, the parameters that generated them are
+            known, and the estimates can be compared with them.
+          </p>
+        }
+      >
+        <div className="mt-10 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <div className="min-w-0">
+            <h3 className="text-lg font-semibold text-ink">This page&apos;s illustrative well</h3>
+            <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="rounded-lg border border-line bg-white p-3">
+                <dt className="text-xs text-muted">Growth rate</dt>
+                <dd className="mt-1 font-mono text-lg font-medium text-ink">{websiteWellResult.ratePerH.toFixed(3)} h⁻¹</dd>
+              </div>
+              <div className="rounded-lg border border-line bg-white p-3">
+                <dt className="text-xs text-muted">Doubling time</dt>
+                <dd className="mt-1 font-mono text-lg font-medium text-ink">{websiteWellResult.doublingTimeMin.toFixed(1)} min</dd>
+              </div>
+              <div className="rounded-lg border border-line bg-white p-3">
+                <dt className="text-xs text-muted">Exponential phase</dt>
+                <dd className="mt-1 font-mono text-lg font-medium text-ink">
+                  {websiteWellResult.phaseStartH}–{websiteWellResult.phaseEndH} h
+                </dd>
+              </div>
+            </dl>
+            <p className="mt-4 leading-7 text-body">
+              The curve was generated with a logistic intrinsic rate of {TRUE_RATE_PER_H} per hour, but the
+              application reports {websiteWellResult.ratePerH.toFixed(3)}. That is expected, not an error. In
+              logistic growth the rate falls as the culture grows, and the application reports the average rate
+              over the whole exponential phase ({websiteWellResult.pointsInPhase} readings, R² ={" "}
+              {websiteWellResult.rSquared.toFixed(3)}), which is lower than the intrinsic rate. The tests check it
+              against a mathematical bound instead of demanding 1.2. The steepest one-hour window here gives{" "}
+              {websiteWellResult.steepestWindowRatePerH.toFixed(3)} per hour, close to the intrinsic rate, because
+              these readings carry almost no noise and logistic growth is fastest at the start.
+            </p>
+          </div>
+          <FigureBlock figure={figures[0]} />
+        </div>
+
+        <h3 className="mt-14 text-lg font-semibold text-ink">A synthetic plate with three conditions</h3>
+        <p className="mt-2 max-w-3xl leading-7 text-body">
+          Three replicate wells per condition, three blank wells, readings every 15 minutes for 16 hours, with
+          multiplicative and additive noise. Only credible fits enter the condition means.
+        </p>
+        <div className="mt-6 overflow-x-auto rounded-xl border border-line bg-white">
+          <table className="w-full min-w-[36rem] text-left text-sm">
+            <caption className="sr-only">Growth rates by condition estimated from the synthetic sample plate</caption>
+            <thead className="bg-surface">
+              <tr>
+                <th scope="col" className="px-4 py-2.5 font-medium text-ink">Condition</th>
+                <th scope="col" className="px-4 py-2.5 font-medium text-ink">Model rate r (h⁻¹)</th>
+                <th scope="col" className="px-4 py-2.5 font-medium text-ink">Credible wells</th>
+                <th scope="col" className="px-4 py-2.5 font-medium text-ink">Mean μ ± SD (h⁻¹)</th>
+                <th scope="col" className="px-4 py-2.5 font-medium text-ink">Doubling time of mean (h)</th>
+              </tr>
+            </thead>
+            <tbody className="text-body">
+              {plateResults.map((row) => (
+                <tr key={row.condition} className="border-t border-line">
+                  <th scope="row" className="px-4 py-2.5 font-mono font-normal text-ink">{row.condition}</th>
+                  <td className="px-4 py-2.5 font-mono">{row.modelRatePerH === null ? "no growth" : row.modelRatePerH.toFixed(1)}</td>
+                  <td className="px-4 py-2.5 font-mono">
+                    {row.credible} of {row.wells}
+                  </td>
+                  <td className="px-4 py-2.5 font-mono">
+                    {row.meanRatePerH === null
+                      ? "no growth detected"
+                      : `${row.meanRatePerH.toFixed(3)} ± ${row.sdRatePerH?.toFixed(3)}`}
+                  </td>
+                  <td className="px-4 py-2.5 font-mono">{row.doublingTimeH === null ? "—" : row.doublingTimeH.toFixed(2)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-4 max-w-3xl leading-7 text-body">
+          Even without noise, the method reports an average over the exponential phase that is below r:{" "}
+          {biasA.noiseFreeOverR.toFixed(3)} r for condition_A and {biasB.noiseFreeOverR.toFixed(3)} r for
+          condition_B. condition_A&apos;s estimate is close to that. condition_B&apos;s is not: it is above its
+          noise-free value, and two wells even exceed r. Over 150 simulated plates, condition_B&apos;s estimates
+          averaged {biasB.biasPercent.toFixed(1)}% too high (condition_A&apos;s {biasA.biasPercent.toFixed(1)}%), because for slow growth starting near the
+          quantification limit the window search still favours noisy readings. The method study found and
+          measured this bias; it is documented as a limitation, not yet corrected. This is why the figures,
+          standard errors, and replicates matter, and why synthetic results like these say nothing about real
+          cultures.
+        </p>
+        <div className="mt-10 grid items-start gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+          <FigureBlock figure={figures[1]} />
+          <FigureBlock figure={figures[2]} />
+        </div>
+      </Section>
+
+      <Section
+        id="starter"
+        eyebrow="Built with the starter kit"
+        title="How the ResearchCode workflow shaped it"
+        intro={
+          <p>
+            The application started as a copy of the Phase 2 starter kit. Its specification template, test
+            setup, security rules, assistant instructions, and run-metadata module carried over, and the same
+            workflow found and fixed two real weaknesses in the first version of the method.
+          </p>
+        }
+      >
+        <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          {starterContributions.map((item) => (
+            <div key={item.title} className="rounded-xl border border-line bg-white p-5">
+              <h3 className="font-semibold text-ink">{item.title}</h3>
+              <p className="mt-2 text-[0.96875rem] leading-7 text-body">{item.body}</p>
+            </div>
+          ))}
+        </div>
+        <p className="mt-8 max-w-3xl leading-7 text-body">
+          <strong className="font-semibold text-ink">Limits.</strong> One exponential phase per well; no lag-time
+          or growth-model fitting; one constant blank per plate; descriptive comparisons without significance
+          tests; an upward bias for slow growth near the quantification limit; validated on synthetic data
+          only, not on real experimental measurements. CI runs on Ubuntu with Python 3.12 and 3.13. Always
+          look at the figure for every well before using a number.
+        </p>
       </Section>
     </>
   );

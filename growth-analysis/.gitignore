@@ -1,0 +1,28 @@
+# Python environment and caches (recreate with `uv sync`)
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.hypothesis/
+
+# Build output (`uv build`)
+dist/
+build/
+*.egg-info/
+
+# Generated results: regenerate them from code and raw data instead of committing them
+results/
+
+# Secrets and local settings: never commit these
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.claude/settings.local.json
+
+# Editors and operating systems
+.DS_Store
+.idea/
+.vscode/

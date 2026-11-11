@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "input": {
+    "file": "synthetic_website_example.csv",
+    "time_column": "time_min",
+    "ignored_columns": []
+  },
+  "settings": {
+    "blank_method": "mean",
+    "blank_label": "blank",
+    "min_od": 0.005,
+    "blank_sd_multiple": 10.0,
+    "max_od": null,
+    "window_points": 5,
+    "min_relative_rate": 0.8,
+    "min_fold_change": 2.0,
+    "min_r_squared": 0.98,
+    "max_relative_se": 0.1,
+    "reference_condition": null
+  },
+  "blank": {
+    "method": "mean",
+    "label": "blank",
+    "wells": [
+      "A1"
+    ],
+    "n_readings": 49,
+    "value": 0.04499999999999999,
+    "sd": 7.01080146077341e-18,
+    "min_reading": 0.045,
+    "max_reading": 0.045,
+    "quantification_limit": 0.005
+  },
+  "assumptions": [
+    "Blank-corrected OD600 is proportional to cell density within the fitted range.",
+    "The blank is constant over time and the same for every sample well.",
+    "Errors in ln(OD) are independent with constant variance (used for the standard error).",
+    "Wells are independent replicates as labelled by their condition.",
+    "Natural logarithms are used; time is in hours, rates in 1/h, doubling times in h.",
+    "The reported growth rate is the least-squares slope of ln(OD) over the detected exponential phase: an average rate over that interval, not a model parameter such as a logistic intrinsic rate."
+  ],
+  "warnings": [],
+  "wells": [
+    {
+      "well": "B3",
+      "condition": "illustrative",
+      "status": "growth",
+      "credible": true,
+      "flags": [
+        "phase_starts_at_first_valid_reading"
+      ],
+      "growth_rate_per_h": 1.1206252533842966,
+      "growth_rate_se_per_h": 0.012106264383579255,
+      "doubling_time_h": 0.618536106041369,
+      "r_squared": 0.9987178613267702,
+      "n_points_in_phase": 13,
+      "phase_start_h": 0.0,
+      "phase_end_h": 3.0,
+      "fold_change_in_phase": 28.843243175050752,
+      "fit_intercept_ln_od": -4.569416899043662,
+      "steepest_window_rate_per_h": 1.2003797639325111,
+      "net_rate_per_h": 0.32346490528974736,
+      "n_readings": 49,
+      "n_valid": 49,
+      "n_below_quantification_limit": 0,
+      "n_above_max_od": 0
+    }
+  ],
+  "conditions": [
+    {
+      "condition": "illustrative",
+      "n_wells": 1,
+      "n_credible": 1,
+      "mean_growth_rate_per_h": 1.1206252533842966,
+      "sd_growth_rate_per_h": null,
+      "sem_growth_rate_per_h": null,
+      "min_growth_rate_per_h": 1.1206252533842966,
+      "max_growth_rate_per_h": 1.1206252533842966,
+      "doubling_time_of_mean_rate_h": 0.618536106041369,
+      "ratio_to_reference": null,
+      "status_counts": {
+        "growth": 1
+      },
+      "wells_not_included": {}
+    }
+  ]
+}

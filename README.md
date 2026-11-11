@@ -16,7 +16,7 @@ publication or service.
 | ----- | ------------------------------------------------------------ | ----------- |
 | 1     | Website and project foundation                               | Implemented |
 | 2     | Scientific Python starter kit (uv, pytest, Ruff, CI)         | Implemented |
-| 3     | Worked bacterial growth analysis built with the starter kit  | Planned     |
+| 3     | Worked bacterial growth analysis built with the starter kit  | In progress (implemented, in review) |
 | 4     | Controlled comparison: unstructured vs structured AI coding  | Planned     |
 | 5     | Deployment, documentation, and polish                        | Planned     |
 
@@ -32,8 +32,9 @@ See [docs/PROJECT_PLAN.md](docs/PROJECT_PLAN.md) for architecture, milestones, a
 │   ├── src/content/      Site config and guide content as typed TypeScript modules
 │   └── src/lib/          Growth-rate calculations for the interactive example
 ├── scientific-starter/   Copyable scientific Python project (uv, pytest, Hypothesis, Ruff, CI)
+├── growth-analysis/      Bacterial growth-curve analysis application built from the starter (Phase 3)
 ├── docs/                 Project plan and design documents
-├── .github/workflows/    CI for the website (web.yml) and the starter (starter.yml)
+├── .github/workflows/    CI for the website (web.yml), the starter (starter.yml), and growth-analysis
 ├── CLAUDE.md             Instructions for AI coding assistants working in this repo
 └── README.md
 ```
@@ -61,6 +62,29 @@ uv build                     # build wheel and source distribution into dist/
 
 GitHub Actions (`.github/workflows/starter.yml`) copies the starter out of the monorepo and runs
 these checks on Python 3.12 and 3.13 whenever files in `scientific-starter/` change.
+
+## Growth-curve analysis (Phase 3)
+
+`growth-analysis/` is a working command-line application, built from a copy of the starter
+kit, that estimates specific growth rates and doubling times from multi-well optical density
+time courses. It detects each well's exponential phase, fits ln(OD), judges whether each fit is
+credible, plots every fit, summarises replicate wells by condition, and records run metadata.
+All bundled data are synthetic. See [growth-analysis/README.md](growth-analysis/README.md) and
+the method specification, [growth-analysis/docs/spec-growth-curve.md](growth-analysis/docs/spec-growth-curve.md).
+
+From `growth-analysis/`:
+
+```bash
+uv sync --locked
+uv run growth-analyze --input data/sample/synthetic_plate.csv --output results/sample
+uv run pytest                # unit, validation, property-based, end-to-end, regression tests
+uv run ruff check .
+uv run ruff format --check .
+uv build
+```
+
+GitHub Actions (`.github/workflows/growth-analysis.yml`) copies the project out of the monorepo,
+runs these checks on Python 3.12 and 3.13, and runs the command on the sample data.
 
 ## Running the website locally
 
@@ -97,8 +121,9 @@ All commands run from `web/`:
 | `npm run build`      | Production build; fails if any page stops being static    |
 | `npm run check`      | All of the above, in order                                |
 
-GitHub Actions runs the same checks on every push and pull request that touches `web/` or
-`scientific-starter/` (the website's tests verify that the starter-kit page matches the starter's files).
+GitHub Actions runs the same checks on every push and pull request that touches `web/`,
+`scientific-starter/`, or `growth-analysis/` (the website's tests verify that the starter-kit and
+example pages match those directories' files, commands, results, and figures).
 
 ### Dependency audit
 
