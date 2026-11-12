@@ -1,0 +1,5 @@
+{
+  "task": "fixture-summary",
+  "note": "FIXTURE practice task; not part of the experiment.",
+  "examples": [{ "call": "summarize([1, 2, 3, 4])", "expected": { "mean": 2.5, "sd": 1.2909944487358056, "n": 4 } }]
+}

@@ -3,12 +3,12 @@ name: Website
 on:
   push:
     branches: [main]
-    # scientific-starter/** and growth-analysis/** are included because the website's tests
-    # check that the starter-kit and example pages match the files, commands, results, and
-    # figures in those directories.
-    paths: ["web/**", "scientific-starter/**", "growth-analysis/**", ".github/workflows/web.yml"]
+    # scientific-starter/**, growth-analysis/**, and experiments/** are included because the
+    # website's tests check that the starter-kit, example, and evaluation pages match the files,
+    # commands, results, figures, and experiment configuration in those directories.
+    paths: ["web/**", "scientific-starter/**", "growth-analysis/**", "experiments/**", ".github/workflows/web.yml"]
   pull_request:
-    paths: ["web/**", "scientific-starter/**", "growth-analysis/**", ".github/workflows/web.yml"]
+    paths: ["web/**", "scientific-starter/**", "growth-analysis/**", "experiments/**", ".github/workflows/web.yml"]
   workflow_dispatch:
 
 permissions:

@@ -1,0 +1,143 @@
+# Tests the Phase 4 experiment framework in experiments/.
+#
+# This workflow NEVER runs an AI agent or a model session, uses no credentials or secrets,
+# uploads no artifacts, and never writes to experiments/results/. The genuine evaluator (hidden
+# cases, reference solutions, defective variants) is private and is NOT available here: CI
+# validates the public FIXTURE evaluator, runs an end-to-end dry run with labelled fixtures
+# (discarded afterwards), checks the public half of the freeze record, and checks the agent
+# environment's network and credential isolation without calling the model API.
+
+name: Experiments
+
+on:
+  push:
+    branches: [main]
+    # scientific-starter/** is the treatment given to Condition B and is part of the freeze record.
+    paths: ["experiments/**", "scientific-starter/**", ".github/workflows/experiments.yml"]
+  pull_request:
+    paths: ["experiments/**", "scientific-starter/**", ".github/workflows/experiments.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: experiments-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  harness:
+    name: Harness on Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13"]
+    defaults:
+      run:
+        working-directory: experiments
+    env:
+      # Docker tests must run here, not be skipped.
+      RC_REQUIRE_DOCKER: "1"
+    steps:
+      - uses: actions/checkout@v7
+
+      # setup-uv publishes only full version tags (there is no moving "v10" tag).
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          version: "0.12.19"
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+          working-directory: experiments
+
+      - name: Install from the lock file
+        run: uv sync --locked
+
+      - name: Lint (including security rules)
+        run: uv run ruff check .
+
+      - name: Check formatting
+        run: uv run ruff format --check .
+
+      - name: Check that the frozen public experiment files are unchanged
+        run: uv run rc-exp freeze --check
+
+      - name: Build the evaluation sandbox image
+        run: uv run rc-exp build-images --sandbox-only
+
+      - name: Run the harness tests (including Docker isolation tests)
+        run: uv run pytest
+
+      - name: Validate the public fixture evaluator in the sandbox
+        run: uv run rc-exp validate-evaluator --evaluator fixture --backend docker
+
+      - name: End-to-end dry run with labelled fixtures (no AI model)
+        run: uv run rc-exp dry-run --backend docker --replicates 1 --out "$RUNNER_TEMP/fixture-dry-run"
+
+      - name: Build the package
+        run: uv build
+
+  agent-environment:
+    name: Agent environment isolation (no model calls)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build the agent and proxy images
+        run: |
+          docker build -t researchcode-agent:2.1.319 experiments/docker/agent
+          docker build -t researchcode-proxy:1 experiments/docker/proxy
+
+      - name: Start the internal network and the filtering proxy
+        run: |
+          docker network create --internal rc-trials-internal
+          docker run -d --name rc-trials-proxy --network bridge researchcode-proxy:1
+          docker network connect rc-trials-internal rc-trials-proxy
+          sleep 3
+
+      - name: Check tool versions in the agent image
+        run: docker run --rm researchcode-agent:2.1.319 sh -c 'claude --version && uv --version && python --version && id -u'
+
+      - name: Check that only allow-listed hosts are reachable
+        run: |
+          probe() {
+            docker run --rm --network rc-trials-internal -e HTTPS_PROXY=http://rc-trials-proxy:8888 \
+              researchcode-agent:2.1.319 python -c "import sys, urllib.request as u
+          try:
+              u.urlopen(sys.argv[1], timeout=20)
+          except u.HTTPError:
+              pass  # an HTTP status means the server was reached
+          " "$1"
+          }
+          probe https://pypi.org/simple/ || { echo "pypi.org should be reachable"; exit 1; }
+          probe https://api.anthropic.com/ || { echo "the model API should be reachable"; exit 1; }
+          if probe https://github.com/; then echo "github.com must be blocked"; exit 1; fi
+          if probe https://raw.githubusercontent.com/; then echo "raw.githubusercontent.com must be blocked"; exit 1; fi
+          if docker run --rm --network rc-trials-internal researchcode-agent:2.1.319 \
+              python -c "import urllib.request as u; u.urlopen('https://pypi.org/', timeout=10)"; then
+            echo "direct access without the proxy must fail"; exit 1
+          fi
+          echo "network isolation verified"
+
+      - name: Check that billing credentials on the host never reach an agent container
+        env:
+          # Dummy values, not secrets: they must not appear inside the container.
+          ANTHROPIC_API_KEY: dummy-must-not-pass
+          ANTHROPIC_AUTH_TOKEN: dummy-must-not-pass
+          ANTHROPIC_BASE_URL: http://dummy.invalid
+        run: |
+          python3 - <<'PY'
+          import subprocess, sys
+          sys.path.insert(0, "experiments/src")
+          from rc_experiments.agent import container_arguments
+          from rc_experiments.config import Config
+          from pathlib import Path
+          import tempfile
+          tmp = Path(tempfile.mkdtemp())
+          (tmp / "ws").mkdir(); (tmp / "cfg").mkdir()
+          args = [a for a in container_arguments(Config.load(), "rc-credcheck", tmp / "ws", tmp / "cfg") if a != "-it"]
+          env = subprocess.run(args + ["env"], capture_output=True, text=True, check=True).stdout
+          leaked = [line.split("=")[0] for line in env.splitlines() if line.startswith("ANTHROPIC")]
+          assert not leaked, leaked
+          print("no ANTHROPIC_* variable reached the agent container")
+          PY

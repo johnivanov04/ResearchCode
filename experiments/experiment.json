@@ -1,0 +1,187 @@
+{
+  "protocol_version": "1.2",
+  "status": "framework-ready",
+  "status_note": "Framework implemented and verified with reference solutions, defective variants, and labelled fixtures. Trials are run manually through the experimenter's Claude Pro subscription at no additional cost. No AI trials have been run.",
+  "research_question": "When the same AI coding agent, with the same model, tools, and limits, is given the same scientific programming task, does working within ResearchCode's structured workflow produce more reliable scientific software than unstructured AI coding?",
+  "primary_hypothesis": "The mean share of hidden evaluation cases passed differs between the structured condition (B) and the unstructured condition (A), averaged over tasks with equal weight (expected direction B > A; two-sided test).",
+  "conditions": [
+    {
+      "id": "A",
+      "slug": "unstructured",
+      "name": "Unstructured AI coding",
+      "prompt_file": "conditions/A-unstructured/PROMPT.md",
+      "workspace_contents": [
+        "TASK.md",
+        "public_examples.json"
+      ]
+    },
+    {
+      "id": "B",
+      "slug": "structured",
+      "name": "ResearchCode structured development",
+      "prompt_file": "conditions/B-structured/PROMPT.md",
+      "workspace_contents": [
+        "TASK.md",
+        "public_examples.json",
+        "scientific-starter (tracked files)"
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "id": "serial-dilution",
+      "module": "serial_dilution",
+      "title": "Serial dilutions and plate counts"
+    },
+    {
+      "id": "calibration",
+      "module": "calibration",
+      "title": "Calibration curve and inverse prediction"
+    },
+    {
+      "id": "enzyme-kinetics",
+      "module": "enzyme_kinetics",
+      "title": "Michaelis-Menten kinetics and a CSV tool"
+    }
+  ],
+  "case_categories": [
+    "known_answer",
+    "edge_case",
+    "invalid_input",
+    "numerical",
+    "reproducibility",
+    "integration"
+  ],
+  "design": {
+    "pilot_trials_per_cell": 1,
+    "confirmatory_trials_per_cell": 10,
+    "schedule_seed": 20261111,
+    "max_infrastructure_reruns": 2,
+    "minimum_valid_trials_per_cell_for_inference": 5,
+    "stopping_rule": "Run trials in schedule order and stop only at the end of a complete block (one trial of every task and condition), when the planned trials are done or the experimenter ends collection because the subscription's usage allows no more. The achieved number of trials is reported with its limitations."
+  },
+  "agent": {
+    "tool": "Claude Code",
+    "tool_version": "2.1.319",
+    "model": "claude-opus-5-5",
+    "effort": "high",
+    "session_mode": "manual-interactive",
+    "wall_clock_limit_minutes": 45,
+    "permission_mode": "bypassPermissions",
+    "disallowed_tools": [
+      "WebSearch",
+      "WebFetch"
+    ],
+    "max_continuation_messages": 2,
+    "container": {
+      "cpus": 2,
+      "memory": "4g",
+      "pids_limit": 512
+    },
+    "network_allowlist": [
+      "api.anthropic.com",
+      "pypi.org",
+      "files.pythonhosted.org"
+    ]
+  },
+  "evaluation": {
+    "python": "3.12",
+    "allowed_runtime_packages": [
+      "numpy",
+      "scipy"
+    ],
+    "case_timeout_seconds": 20,
+    "own_tests_timeout_seconds": 300,
+    "sandbox": {
+      "network": "none",
+      "read_only_root": true,
+      "cpus": 1,
+      "memory": "1g",
+      "pids_limit": 256,
+      "tmpfs_size": "256m"
+    },
+    "genuine_evaluator": "private repository outside the public one (default ~/researchcode-private/phase4-evaluator; RC_PRIVATE_EVALUATOR); hashes in FREEZE.json",
+    "own_tests_rule": "tests in files byte-identical to a scientific-starter file are inherited and excluded from test counts and mutation analysis"
+  },
+  "metrics": {
+    "primary": {
+      "id": "hidden_pass_rate",
+      "name": "Hidden pass rate",
+      "definition": "Share of a task's hidden evaluation cases that the submission passes; cases weighted equally within a task, tasks weighted equally overall."
+    },
+    "secondary": [
+      {
+        "id": "category_pass_rates",
+        "name": "Category pass rates",
+        "kind": "objective"
+      },
+      {
+        "id": "category_balanced_pass_rate",
+        "name": "Category-balanced pass rate (sensitivity analysis)",
+        "kind": "objective"
+      },
+      {
+        "id": "numerical_accuracy",
+        "name": "Numerical accuracy",
+        "kind": "objective"
+      },
+      {
+        "id": "mutation_score",
+        "name": "Mutation score of the submission's own tests",
+        "kind": "objective"
+      },
+      {
+        "id": "own_tests",
+        "name": "Own tests collected and passing",
+        "kind": "objective"
+      },
+      {
+        "id": "security_findings",
+        "name": "Static security findings",
+        "kind": "objective"
+      },
+      {
+        "id": "lint_density",
+        "name": "Lint findings per 100 lines",
+        "kind": "objective"
+      },
+      {
+        "id": "dependency_hygiene",
+        "name": "Dependency hygiene",
+        "kind": "objective"
+      },
+      {
+        "id": "development_effort",
+        "name": "Development effort (wall-clock time, and messages and tokens recorded in the session log)",
+        "kind": "objective"
+      },
+      {
+        "id": "review_rubric",
+        "name": "Blinded maintainability review",
+        "kind": "subjective"
+      }
+    ]
+  },
+  "analysis": {
+    "confidence_level": 0.95,
+    "bootstrap_resamples": 10000,
+    "permutation_resamples": 10000,
+    "alpha": 0.05,
+    "seed": 20261112
+  },
+  "billing": {
+    "additional_spending_usd": 0,
+    "access": "The experimenter's existing Claude Pro subscription, used through Claude Code",
+    "credential": "CLAUDE_CODE_OAUTH_TOKEN",
+    "credential_source": "claude setup-token (run once on the host; requires a Claude subscription)",
+    "forbidden_credentials": [
+      "ANTHROPIC_API_KEY",
+      "ANTHROPIC_AUTH_TOKEN",
+      "ANTHROPIC_BASE_URL",
+      "CLAUDE_CODE_USE_BEDROCK",
+      "CLAUDE_CODE_USE_VERTEX"
+    ],
+    "extra_usage": "must be turned off in the Claude account; a session that reports extra usage is stopped and invalid",
+    "automated_model_calls": false
+  }
+}

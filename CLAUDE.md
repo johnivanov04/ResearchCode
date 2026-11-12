@@ -17,7 +17,10 @@ Plan and phase status: `docs/PROJECT_PLAN.md`.
   for researchers' projects; follow them when working inside it.
 - `growth-analysis/` — growth-curve analysis application built from the starter (Phase 3). It has its own
   `AGENTS.md`/`CLAUDE.md`; follow them, and change `docs/spec-growth-curve.md` before changing the method.
-- `experiments/` — study protocol and results (Phase 4, not created yet).
+- `experiments/` — pre-registered Phase 4 experiment (protocol, tasks, hidden evaluator, harness). It has its
+  own `AGENTS.md`/`CLAUDE.md`; follow them. Never copy hidden material into workspaces or the website. Trials are
+  manual Claude Code sessions run by the human through their Claude Pro subscription ($0 additional spending):
+  never start a session, call a model API, or add an API key or automated model call.
 - `docs/` — plans and design docs.
 
 ## Website conventions
@@ -69,6 +72,20 @@ uv build
   review the differences, and update the website content and figure copies together.
 - Verify from `growth-analysis/` with the same five uv commands as the starter, plus
   `uv run growth-analyze --input data/sample/synthetic_plate.csv --output <new dir>`.
+
+## Experiment conventions (`experiments/`)
+- `docs/PROTOCOL.md` and `experiment.json` define the experiment; `FREEZE.json` records file hashes. Before the
+  first trial, change a frozen file only with `uv run rc-exp freeze` and an entry in the protocol's amendment table;
+  after it, only as the protocol's section 13 allows.
+- `web/src/content/evaluation.ts` shows the design on `/evaluation`; tests check it against `experiment.json`,
+  the protocol, and `docs/evaluator-validation.json`. Publish results there only after real trials and analysis.
+- Generated code is evaluated only in the Docker sandbox. Fixture or mock data never goes into `results/`.
+- Verify from `experiments/` with the same five uv commands as the starter (the Docker tests need the sandbox
+  image: `uv run rc-exp build-images --sandbox-only`), plus `uv run rc-exp validate-evaluator --evaluator fixture`
+  and `uv run rc-exp freeze --check`. The genuine evaluator (hidden cases, references, defects) is private and lives
+  outside this public repository (`~/researchcode-private/phase4-evaluator`); never copy any of it into this
+  repository, CI, or the website. Where it is present, also run `uv run rc-exp validate-evaluator` and
+  `uv run pytest ~/researchcode-private/phase4-evaluator/tests`.
 
 ## Safety
 - Do not push, deploy, or take irreversible actions without explicit approval.
