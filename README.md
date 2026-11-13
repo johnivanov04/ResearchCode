@@ -16,8 +16,8 @@ publication or service.
 | ----- | ------------------------------------------------------------ | ----------- |
 | 1     | Website and project foundation                               | Implemented |
 | 2     | Scientific Python starter kit (uv, pytest, Ruff, CI)         | Implemented |
-| 3     | Worked bacterial growth analysis built with the starter kit  | In progress (implemented, in review) |
-| 4     | Controlled comparison: unstructured vs structured AI coding  | Planned     |
+| 3     | Worked bacterial growth analysis built with the starter kit  | Implemented |
+| 4     | Controlled comparison: unstructured vs structured AI coding  | In progress (framework implemented; no trials run) |
 | 5     | Deployment, documentation, and polish                        | Planned     |
 
 See [docs/PROJECT_PLAN.md](docs/PROJECT_PLAN.md) for architecture, milestones, and acceptance criteria.
@@ -33,13 +33,20 @@ See [docs/PROJECT_PLAN.md](docs/PROJECT_PLAN.md) for architecture, milestones, a
 │   └── src/lib/          Growth-rate calculations for the interactive example
 ├── scientific-starter/   Copyable scientific Python project (uv, pytest, Hypothesis, Ruff, CI)
 ├── growth-analysis/      Bacterial growth-curve analysis application built from the starter (Phase 3)
+├── experiments/          Pre-registered experiment: protocol, tasks, hidden evaluator, harness (Phase 4)
 ├── docs/                 Project plan and design documents
-├── .github/workflows/    CI for the website (web.yml), the starter (starter.yml), and growth-analysis
+├── .github/workflows/    CI for the website, the starter, growth-analysis, and experiments
 ├── CLAUDE.md             Instructions for AI coding assistants working in this repo
 └── README.md
 ```
 
-`experiments/` (Phase 4) will be added in a later phase.
+`experiments/` (Phase 4) holds the pre-registered experiment comparing unstructured AI coding with the
+structured ResearchCode workflow: the protocol, three tasks, a hidden evaluator, an isolated harness, and
+the analysis pipeline. Trials are manual Claude Code sessions through a Claude Pro subscription, with no
+additional spending. **No trials have been run, so there are no results.** See
+[experiments/README.md](experiments/README.md) and [experiments/docs/PROTOCOL.md](experiments/docs/PROTOCOL.md).
+GitHub Actions (`.github/workflows/experiments.yml`) tests the harness and validates the evaluator; it never
+runs an AI agent.
 
 ## Scientific Python starter kit
 

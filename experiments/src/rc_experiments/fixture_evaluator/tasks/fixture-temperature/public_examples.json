@@ -1,0 +1,5 @@
+{
+  "task": "fixture-temperature",
+  "note": "FIXTURE practice task; not part of the experiment.",
+  "examples": [{ "call": "convert_temperature(100, \"C\", \"F\")", "expected": 212.0 }]
+}

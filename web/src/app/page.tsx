@@ -74,9 +74,9 @@ const toolkit: { title: string; body: string; href: string; status: Status; cta:
   },
   {
     title: "Evaluation",
-    body: "A planned comparison of unstructured prompting and the structured workflow on the same scientific tasks.",
+    body: "A pre-registered comparison of unstructured AI coding and the structured workflow on three scientific tasks. The framework is built; trials have not been run.",
     href: "/evaluation",
-    status: "planned",
+    status: "in-progress",
     cta: "Read the study design",
   },
 ];

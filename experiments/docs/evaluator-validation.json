@@ -1,0 +1,295 @@
+{
+  "protocol_version": "1.0",
+  "note": "Evaluator validation with the experimenters' reference solutions and deliberately defective variants. These are checks of the scoring system, not experimental results.",
+  "backend": "docker",
+  "tasks": {
+    "serial-dilution": {
+      "module": "serial_dilution",
+      "cases": 53,
+      "cases_by_category": {
+        "edge_case": 11,
+        "invalid_input": 23,
+        "known_answer": 17,
+        "reproducibility": 2
+      },
+      "reference_pass_rate": 1.0,
+      "mutants": [
+        {
+          "name": "inverted-step-ratio",
+          "description": "dilution factor computed as diluent / transfer",
+          "pass_rate": 0.8302,
+          "cases_failed": 9,
+          "categories_failed": [
+            "edge_case",
+            "known_answer",
+            "reproducibility"
+          ]
+        },
+        {
+          "name": "greek-mu-rejected",
+          "description": "only the micro sign is accepted for microlitres",
+          "pass_rate": 0.9434,
+          "cases_failed": 3,
+          "categories_failed": [
+            "known_answer"
+          ]
+        },
+        {
+          "name": "plated-unit-ignored",
+          "description": "plated volume assumed to be in mL whatever its unit",
+          "pass_rate": 0.9811,
+          "cases_failed": 1,
+          "categories_failed": [
+            "known_answer"
+          ]
+        },
+        {
+          "name": "all-plates-pooled",
+          "description": "plates outside the countable range are pooled too",
+          "pass_rate": 0.9245,
+          "cases_failed": 4,
+          "categories_failed": [
+            "edge_case"
+          ]
+        },
+        {
+          "name": "exclusive-bounds",
+          "description": "countable range bounds treated as exclusive",
+          "pass_rate": 0.9623,
+          "cases_failed": 2,
+          "categories_failed": [
+            "edge_case"
+          ]
+        },
+        {
+          "name": "cumulative-off-by-one",
+          "description": "cumulative factors shifted by one step",
+          "pass_rate": 0.9245,
+          "cases_failed": 4,
+          "categories_failed": [
+            "known_answer",
+            "reproducibility"
+          ]
+        },
+        {
+          "name": "negative-volumes-accepted",
+          "description": "negative volumes are not rejected",
+          "pass_rate": 0.9623,
+          "cases_failed": 2,
+          "categories_failed": [
+            "invalid_input"
+          ]
+        },
+        {
+          "name": "c1v1-diluent-is-final",
+          "description": "diluent volume reported as the final volume",
+          "pass_rate": 0.9434,
+          "cases_failed": 3,
+          "categories_failed": [
+            "edge_case",
+            "known_answer"
+          ]
+        },
+        {
+          "name": "sorts-input-in-place",
+          "description": "the caller's list of plates is sorted in place",
+          "pass_rate": 0.9057,
+          "cases_failed": 5,
+          "categories_failed": [
+            "edge_case",
+            "known_answer",
+            "reproducibility"
+          ]
+        }
+      ],
+      "mutants_detected": 9
+    },
+    "calibration": {
+      "module": "calibration",
+      "cases": 30,
+      "cases_by_category": {
+        "edge_case": 7,
+        "invalid_input": 12,
+        "known_answer": 7,
+        "numerical": 2,
+        "reproducibility": 2
+      },
+      "reference_pass_rate": 1.0,
+      "mutants": [
+        {
+          "name": "normal-quantile",
+          "description": "confidence interval uses the normal, not Student's t, quantile",
+          "pass_rate": 0.7,
+          "cases_failed": 9,
+          "categories_failed": [
+            "edge_case",
+            "known_answer",
+            "reproducibility"
+          ]
+        },
+        {
+          "name": "dof-n-minus-1",
+          "description": "residual SD divides by n - 1 instead of n - 2",
+          "pass_rate": 0.4667,
+          "cases_failed": 16,
+          "categories_failed": [
+            "edge_case",
+            "known_answer",
+            "numerical",
+            "reproducibility"
+          ]
+        },
+        {
+          "name": "replicates-ignored",
+          "description": "standard error ignores the number of unknown replicates",
+          "pass_rate": 0.8667,
+          "cases_failed": 4,
+          "categories_failed": [
+            "known_answer",
+            "reproducibility"
+          ]
+        },
+        {
+          "name": "negative-clipped",
+          "description": "negative concentration estimates clipped to zero",
+          "pass_rate": 0.9667,
+          "cases_failed": 1,
+          "categories_failed": [
+            "edge_case"
+          ]
+        },
+        {
+          "name": "naive-sums",
+          "description": "slope from uncentred sums (catastrophic cancellation)",
+          "pass_rate": 0.9333,
+          "cases_failed": 2,
+          "categories_failed": [
+            "numerical"
+          ]
+        },
+        {
+          "name": "lod-3-sigma",
+          "description": "LOD computed with 3 instead of 3.3",
+          "pass_rate": 0.8,
+          "cases_failed": 6,
+          "categories_failed": [
+            "edge_case",
+            "known_answer",
+            "numerical",
+            "reproducibility"
+          ]
+        },
+        {
+          "name": "no-extrapolation-flag",
+          "description": "extrapolation never flagged",
+          "pass_rate": 0.9333,
+          "cases_failed": 2,
+          "categories_failed": [
+            "edge_case"
+          ]
+        },
+        {
+          "name": "negative-slope-accepted",
+          "description": "a non-positive slope is not rejected",
+          "pass_rate": 0.9333,
+          "cases_failed": 2,
+          "categories_failed": [
+            "invalid_input"
+          ]
+        }
+      ],
+      "mutants_detected": 8
+    },
+    "enzyme-kinetics": {
+      "module": "enzyme_kinetics",
+      "cases": 27,
+      "cases_by_category": {
+        "edge_case": 3,
+        "integration": 12,
+        "invalid_input": 5,
+        "known_answer": 3,
+        "numerical": 2,
+        "reproducibility": 2
+      },
+      "reference_pass_rate": 1.0,
+      "mutants": [
+        {
+          "name": "lineweaver-burk",
+          "description": "parameters from a Lineweaver-Burk linearisation",
+          "pass_rate": 0.6667,
+          "cases_failed": 9,
+          "categories_failed": [
+            "edge_case",
+            "integration",
+            "known_answer",
+            "numerical",
+            "reproducibility"
+          ]
+        },
+        {
+          "name": "mM-not-converted",
+          "description": "millimolar input not converted to micromolar",
+          "pass_rate": 0.963,
+          "cases_failed": 1,
+          "categories_failed": [
+            "integration"
+          ]
+        },
+        {
+          "name": "overwrites-output",
+          "description": "existing output files are overwritten",
+          "pass_rate": 0.963,
+          "cases_failed": 1,
+          "categories_failed": [
+            "integration"
+          ]
+        },
+        {
+          "name": "bom-not-handled",
+          "description": "a UTF-8 byte-order mark corrupts the first column name",
+          "pass_rate": 0.963,
+          "cases_failed": 1,
+          "categories_failed": [
+            "integration"
+          ]
+        },
+        {
+          "name": "blank-lines-not-skipped",
+          "description": "empty lines are treated as invalid rows",
+          "pass_rate": 0.963,
+          "cases_failed": 1,
+          "categories_failed": [
+            "integration"
+          ]
+        },
+        {
+          "name": "no-identifiability-check",
+          "description": "returns a boundary Km instead of raising",
+          "pass_rate": 0.9259,
+          "cases_failed": 2,
+          "categories_failed": [
+            "edge_case",
+            "integration"
+          ]
+        },
+        {
+          "name": "se-divides-by-n",
+          "description": "residual variance divided by n instead of n - 2",
+          "pass_rate": 0.6667,
+          "cases_failed": 9,
+          "categories_failed": [
+            "edge_case",
+            "integration",
+            "known_answer",
+            "numerical",
+            "reproducibility"
+          ]
+        }
+      ],
+      "mutants_detected": 7
+    }
+  },
+  "total_cases": 110,
+  "total_mutants": 24,
+  "problems": []
+}

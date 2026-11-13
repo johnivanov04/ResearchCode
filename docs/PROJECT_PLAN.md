@@ -21,7 +21,7 @@ ResearchCode/
 ├── web/                  Next.js website (Phase 1)
 ├── scientific-starter/   Python starter template (Phase 2)
 ├── growth-analysis/      Bacterial growth-curve analysis application (Phase 3)
-├── experiments/          Experiment protocol, tasks, raw results (Phase 4, not yet created)
+├── experiments/          Pre-registered experiment: protocol, tasks, hidden evaluator, harness (Phase 4)
 ├── docs/                 Design docs, methodology, plans
 ├── .github/workflows/    CI
 ├── CLAUDE.md             Persistent agent instructions
@@ -62,7 +62,7 @@ browsers. End-to-end browser tests are a reasonable Phase 5 addition.
 | `/guides/[slug]`        | Individual guide (statically generated from content modules)        |
 | `/starter-kit`          | The Python starter: contents, setup, copy instructions, limits      |
 | `/example`              | Growth-rate task, pitfalls, and the working growth-analysis app     |
-| `/evaluation`           | Proposed vibe-coding vs structured-workflow study; no results yet   |
+| `/evaluation`           | Pre-registered experiment design and status; no results until trials run |
 | `/about`                | Academic context, mission, roadmap                                  |
 
 ## 3. Milestones
@@ -128,7 +128,7 @@ Phase 2 acceptance criteria:
    starter is a monorepo folder, and is verified against the files by tests.
 9. All Phase 1 website checks still pass.
 
-### Phase 3 — Scientific demonstration (status: in progress; implemented on `feat/phase-3-scientific-demo`, awaiting review)
+### Phase 3 — Scientific demonstration (status: complete, merged in PR #2 as `9833e83`)
 
 A complete bacterial growth-curve analysis application in `growth-analysis/`, created from a
 copy of `scientific-starter/` to demonstrate how a researcher uses the starter kit. It is a
@@ -175,10 +175,48 @@ Phase 3 acceptance criteria:
    and is verified against the application's files by tests; all existing website and starter checks
    still pass.
 
-### Phase 4 — Controlled experiment
-- Pre-registered protocol in `experiments/` before any data collection
-- Tasks, rubrics, hidden test suites, scoring scripts
-- Results published on `/evaluation` only after collection and analysis
+### Phase 4 — Controlled experiment (status: in progress; framework implemented on `feat/phase-4-evaluation`, no trials run)
+
+Research question: when the same AI coding agent, with the same model, tools, and budget, is
+given the same scientific programming task, does working within ResearchCode's structured
+workflow produce more reliable scientific software than unstructured AI coding?
+
+| Component | Decision |
+| --- | --- |
+| Protocol | `experiments/docs/PROTOCOL.md` (version 1.0), written before any trial. `experiments/experiment.json` holds the same parameters for the harness and the website tests. `experiments/FREEZE.json` records the SHA-256 of every defining file. |
+| Conditions | A: the task statement only. B: the same statement plus the starter kit and its workflow. Same agent (Claude Code 2.1.319, `claude-opus-5-5`), tools, container, limits, and network. |
+| Access (protocol 1.1) | Manual, interactive Claude Code sessions (`rc-exp session`) through the owner's Claude Pro subscription; $0 additional spending. No API key, no automated model calls, and no model use in CI. Pro usage limits may reduce the number of trials; there is a fixed stopping rule, and planned and achieved sizes are reported. |
+| Tasks | `serial-dilution`, `calibration`, `enzyme-kinetics`, chosen for different failure modes. There is no growth-rate task, because the starter kit contains one. |
+| Hidden evaluator | Private: kept outside the public repository, with SHA-256 hashes in `FREEZE.json`; public CI uses a labelled fixture evaluator. 110 cases in six categories. Expected values are derived independently of the reference solutions. The sandbox reports observations only, and grading happens on the host. The references pass 100%, and all 24 deliberate defects are detected. |
+| Isolation | Workspaces live outside the repository and are checked by hash. The agent runs in a container behind an allow-list proxy (model API and PyPI only). Generated code is evaluated in a Docker sandbox with no network, a read-only file system, a non-root user, no capabilities, and resource limits. |
+| Metrics | Primary: the hidden pass rate. Secondary: category pass rates, a category-balanced sensitivity analysis, numerical accuracy, the mutation score of the submission's own tests, static security and lint findings, dependencies, effort (as reported), and a blinded review rubric. |
+| Design | A 6-trial pilot (excluded from analysis), then 60 confirmatory trials (10 per task and condition) in randomised blocks. Analysis: a stratified bootstrap CI and one permutation test. Cells with fewer than 5 valid trials are reported descriptively. |
+| Process record | `experiments/docs/RESEARCH_LOG.md` (decisions, AI contributions, errors the checks caught) |
+
+Phase 4 milestones:
+1. Protocol and machine-readable configuration (done).
+2. Tasks, public examples, reference solutions, hidden cases, and defective variants (done).
+3. Harness: workspaces, agent runner (automated, manual, fixture), sandboxed evaluation,
+   test-quality scoring, static checks, analysis, blinding, freeze record, and CI (done).
+4. Evaluator validation and an end-to-end fixture dry run (done).
+5. Human review of the protocol and evaluator; freeze confirmed (pending).
+6. Pilot trials: six manual sessions through the Claude Pro subscription, as usage allows (pending).
+7. Confirmatory trials, analysis, and publication on `/evaluation` (pending).
+
+Phase 4 acceptance criteria for the framework, met before any trial:
+1. From `experiments/`: `uv sync --locked`, `uv run pytest` (with the Docker tests),
+   `uv run ruff check .`, `uv run ruff format --check .`, and `uv build` succeed.
+2. `rc-exp validate-evaluator` (genuine, private; and `--evaluator fixture` in CI): every reference passes 100%, and every deliberate defect lowers the
+   score.
+3. `rc-exp dry-run` completes every stage with labelled fixtures, and its output is refused inside
+   `experiments/results/`.
+4. The sandbox blocks network access, writes outside `/tmp`, root privileges, and capabilities. The
+   agent network reaches only the allow-listed hosts.
+5. `rc-exp freeze --check` passes, and the website's tests confirm that `/evaluation` matches
+   `experiment.json`, the protocol, and the evaluator validation.
+6. No trial or result exists in `experiments/results/`. Nothing calls a model automatically: there is no
+   `claude -p`, no API key is passed, and CI uses no credentials. Every session is started by a person,
+   through the Claude Pro subscription.
 
 ### Phase 5 — Deployment and polish
 - Vercel deployment (with approval), custom domain if available
@@ -213,8 +251,7 @@ Phase 3 acceptance criteria:
 
 ## 6. Open questions for later phases
 
-- Final experiment design parameters (participants, tasks, blinding) — to be fixed
-  in a pre-registration document before Phase 4.
+- Whether to add human participants to the AI-agent experiment (it would need IRB review first).
 - Licensing: code under MIT is assumed for the template; content license (e.g.
   CC BY 4.0) to be confirmed with the course instructor.
 - Hosting domain and repository visibility.

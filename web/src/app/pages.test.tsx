@@ -11,6 +11,7 @@ import HomePage from "@/app/page";
 import StarterKitPage from "@/app/starter-kit/page";
 import { guides } from "@/content/guides";
 import { primaryNav } from "@/content/site";
+import { protocolUrl } from "@/content/evaluation";
 import { appSourceUrl } from "@/content/growth-analysis";
 import { starterSourceUrl } from "@/content/starter-kit";
 
@@ -84,10 +85,18 @@ describe("honesty requirements", () => {
     expect(container.querySelector('a[href="/example#application"]')).not.toBeNull();
   });
 
-  it("evaluation page presents a design with no results", () => {
+  it("evaluation page presents the implemented framework with no results", () => {
     const { container } = render(<EvaluationPage />);
-    expect(container.textContent).toMatch(/no data collected yet/i);
+    expect(container.textContent).toMatch(/Framework implemented; results pending/);
+    expect(container.textContent).toMatch(/No AI trials have\s+been run/);
     expect(container.textContent).toMatch(/No results yet/);
+    expect(container.textContent).toMatch(/not experimental results/);
+    expect(container.textContent).toMatch(/Claude Pro subscription/);
+    expect(container.textContent).toMatch(/\$0 additional spending/);
+    expect(container.textContent).not.toMatch(/API key is used|of model use/);
+    expect(container.querySelector(`a[href="${protocolUrl}"]`)).not.toBeNull();
+    // Results are never shown before trials exist: no percentage other than the reference checks.
+    expect(container.querySelector("#results")?.textContent).not.toMatch(/\d+%/);
   });
 
   it("example page labels its data as synthetic and illustrative", () => {

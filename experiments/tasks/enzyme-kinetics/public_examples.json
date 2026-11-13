@@ -1,0 +1,24 @@
+{
+  "task": "enzyme-kinetics",
+  "note": "Illustrative examples from the task statement. All data are synthetic. Fitted values are given to about 7 significant digits; compare with a relative tolerance of about 1e-5.",
+  "examples": [
+    {
+      "call": "fit_michaelis_menten([1, 2.5, 5, 10, 20, 50, 100], [0.45454545454545453, 1.0, 1.6666666666666667, 2.5, 3.3333333333333335, 4.166666666666667, 4.545454545454546])",
+      "expected": { "vmax": 5.0, "km_uM": 10.0, "vmax_se": "approximately 0", "km_se_uM": "approximately 0", "n": 7 },
+      "note": "Exact model values (Vmax 5, Km 10 uM), so the residuals and standard errors are zero up to rounding."
+    },
+    {
+      "call": "fit_michaelis_menten([3, 6, 12, 25, 50, 100, 200], [0.3712, 0.5996, 0.9238, 1.2547, 1.5536, 1.7419, 1.9102])",
+      "expected": { "vmax": 2.015067, "km_uM": 14.42867, "vmax_se": 0.02138496, "km_se_uM": 0.5555017, "n": 7 }
+    },
+    {
+      "call": "fit_michaelis_menten([1, 2, 3], [0.5, 0.8])",
+      "expected": "raises ValueError"
+    },
+    {
+      "command_line": "main([\"--input\", \"rates.csv\", \"--output\", \"fit.json\"])",
+      "input_file": "substrate_mM,rate\n0.003,0.3712\n0.006,0.5996\n0.012,0.9238\n0.025,1.2547\n0.050,1.5536\n0.100,1.7419\n0.200,1.9102\n",
+      "expected": "returns 0 and writes fit.json with the values of the previous noisy example (Km in uM)"
+    }
+  ]
+}
