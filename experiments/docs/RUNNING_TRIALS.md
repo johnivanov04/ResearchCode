@@ -63,6 +63,14 @@ Mac, set `UV_PROJECT_ENVIRONMENT` to a folder outside iCloud first (see the repo
    uv run rc-exp check          # must print "ready for manual sessions"
    ```
 
+**After updating the repository**, rebuild and restart the proxy so it uses the current
+allowlist. `rc-exp check` reports an outdated proxy:
+
+```bash
+uv run rc-exp build-images
+uv run rc-exp network down && uv run rc-exp network up
+```
+
 ## 2. Before each sitting: preflight (no trial, no prompt)
 
 ```bash

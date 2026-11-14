@@ -77,7 +77,8 @@ defects. They test the machinery and never score a genuine trial.
    Claude configuration, so none of the experimenter's settings, memory, or instructions
    are present, and nothing carries over between trials. The only credential passed in is
    the subscription token from `claude setup-token`. The only network route is a proxy that
-   allows the model API and PyPI and refuses everything else, including GitHub.
+   allows the model API, Anthropic's OAuth token service (for the subscription sign-in), and PyPI,
+   and refuses everything else, including GitHub.
 3. **Evaluation.** The submission is copied and run in a new Docker container for every
    evaluation run, with these restrictions:
    - no network;

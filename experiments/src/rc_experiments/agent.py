@@ -104,6 +104,29 @@ def _docker_ok(*args: str) -> bool:
     return result.returncode == 0
 
 
+PROXY_ALLOWLIST = Path(__file__).resolve().parents[2] / "docker" / "proxy" / "allowlist"
+
+
+def proxy_allowlist_problem(container: str = PROXY_CONTAINER) -> str | None:
+    """None if the running proxy filters with the repository's allowlist, else what is wrong.
+
+    The allowlist is copied into the proxy image when it is built, so after the file changes an
+    old image would keep the old rules until it is rebuilt and restarted.
+    """
+    result = subprocess.run(
+        ["docker", "exec", container, "cat", "/etc/tinyproxy/allowlist"],
+        capture_output=True, text=True, timeout=60, check=False,
+    )  # fmt: skip
+    if result.returncode != 0:
+        return f"could not read the allowlist of proxy container {container}"
+    if result.stdout.split() != PROXY_ALLOWLIST.read_text().split():
+        return (
+            f"proxy container {container} uses an outdated allowlist; rebuild and restart it with "
+            "`rc-exp build-images`, then `rc-exp network down` and `rc-exp network up`"
+        )
+    return None
+
+
 def check_environment(config: Config, *, need_credential: bool = True) -> list[str]:
     """Problems that prevent a session (empty list if ready)."""
     problems = []
@@ -117,6 +140,8 @@ def check_environment(config: Config, *, need_credential: bool = True) -> list[s
     )  # fmt: skip
     if result.stdout.strip() != "true":
         problems.append(f"proxy container {PROXY_CONTAINER} not running (rc-exp network up)")
+    elif problem := proxy_allowlist_problem():
+        problems.append(problem)
     if need_credential and not os.environ.get(SUBSCRIPTION_CREDENTIAL):
         problems.append(
             f"{SUBSCRIPTION_CREDENTIAL} is not set: create it once with `claude setup-token` (subscription)"

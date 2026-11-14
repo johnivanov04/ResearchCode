@@ -185,6 +185,39 @@ One error during the move: Claude Code first relabelled the docstrings of the pr
 reference files, which would have changed their hashes. It reverted that before committing, so
 the hashes match the earlier freeze record.
 
+## Pre-pilot defect: the proxy blocked the OAuth token service (2026-11-14, protocol 1.3)
+
+The project owner's first preflight (`rc-exp preflight`, no prompt, no trial) stopped
+immediately: "Unable to connect to Anthropic services. Failed to connect to platform.claude.com:
+ERR_PROXY_TUNNEL".
+
+- **Root cause.** The proxy's log for that session shows two CONNECT requests to
+  `api.anthropic.com` (allowed), then one to `platform.claude.com`, which was refused: "Proxying
+  refused on filtered domain". It was the only refused host. Anthropic's network requirements say
+  that OAuth token exchange, refresh, and revocation for claude.ai accounts go to this host, and
+  that the first-run connectivity check tests it.
+- **Why earlier checks missed it.** The no-credential test in the protocol 1.1 revision used
+  Claude Code's non-interactive mode, which contacted only `api.anthropic.com`. From that, the
+  revision concluded that "the proxy needs no change for subscription tokens". That conclusion
+  was wrong for interactive sessions. Only a real interactive start showed it.
+- **Fix.** One allowlist entry, `^platform\.claude\.com$`. Other hosts in Anthropic's list were
+  not added, because nothing showed they were needed and each widens what an agent can reach:
+  - browser sign-in pages (`claude.ai`, `claude.com`, `sso.claude.com`): the token is created
+    outside the container;
+  - optional services (connectors, downloads, telemetry);
+  - GitHub, which must stay blocked.
+- **Regression tests** (`tests/test_proxy_allowlist.py`). They build the proxy from the
+  repository's files and probe it from a client container with no credentials:
+  - the token service and the model API are reachable;
+  - GitHub, its raw and API hosts, browser sign-in pages, optional services, other registries,
+    arbitrary sites, and look-alike host names are refused by the proxy (HTTP 403);
+  - there is no route that avoids the proxy.
+
+  The tests reproduced the defect before the fix. `rc-exp check` now also refuses a proxy built
+  from an outdated allowlist, which would otherwise keep failing after the update.
+- **What is still unverified.** A real subscription-authenticated session has still not run. The
+  next preflight is the test.
+
 ## Open items
 
 - Human review of the protocol, tasks, hidden cases, and prompts before the pilot.
