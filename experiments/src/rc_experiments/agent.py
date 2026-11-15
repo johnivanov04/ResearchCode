@@ -104,6 +104,53 @@ def _docker_ok(*args: str) -> bool:
     return result.returncode == 0
 
 
+# Claude Code's global configuration in the agent image (docker/agent/Dockerfile). It only marks
+# the first-run setup as complete: otherwise Claude Code 2.1.319 shows its login screen in every
+# new container even when CLAUDE_CODE_OAUTH_TOKEN is set (anthropics/claude-code#46259).
+AGENT_GLOBAL_CONFIG = f"{CONTAINER_HOME}/.claude.json"
+AGENT_GLOBAL_CONFIG_CONTENT = {"hasCompletedOnboarding": True}
+
+
+def agent_image_problem(image: str) -> str | None:
+    """None if the agent image marks Claude Code's first-run setup complete, else what is wrong.
+
+    An image built before protocol 1.4 lacks the file and shows the first-run login screen.
+    The check starts a container with no network that only reads the file.
+    """
+    result = subprocess.run(
+        ["docker", "run", "--rm", "--network", "none", "--cap-drop", "ALL",
+         "--entrypoint", "cat", image, AGENT_GLOBAL_CONFIG],
+        capture_output=True, text=True, timeout=120, check=False,
+    )  # fmt: skip
+    try:
+        content = json.loads(result.stdout) if result.returncode == 0 else None
+    except json.JSONDecodeError:
+        content = None
+    if content != AGENT_GLOBAL_CONFIG_CONTENT:
+        return (
+            f"agent image {image} does not mark Claude Code's first-run setup complete, so it would "
+            "ask for a login despite the token; rebuild it with `rc-exp build-images`"
+        )
+    return None
+
+
+def credential_problem() -> str | None:
+    """None if the subscription token looks usable, else what is wrong. Never includes the value.
+
+    A token copied from a terminal where it wrapped across lines can contain a space or a line
+    break. Claude Code still accepts such a value as a token, and the server then rejects it.
+    """
+    value = os.environ.get(SUBSCRIPTION_CREDENTIAL, "")
+    if not value:
+        return f"{SUBSCRIPTION_CREDENTIAL} is not set: create it once with `claude setup-token` (subscription)"
+    if any(character.isspace() for character in value):
+        return (
+            f"{SUBSCRIPTION_CREDENTIAL} contains whitespace (a space or line break, often from copying a "
+            "token that wrapped across lines); set it again as one unbroken line (see docs/RUNNING_TRIALS.md)"
+        )
+    return None
+
+
 PROXY_ALLOWLIST = Path(__file__).resolve().parents[2] / "docker" / "proxy" / "allowlist"
 
 
@@ -132,6 +179,8 @@ def check_environment(config: Config, *, need_credential: bool = True) -> list[s
     problems = []
     if not _docker_ok("image", "inspect", agent_image(config)):
         problems.append(f"agent image {agent_image(config)} not built (rc-exp build-images)")
+    elif problem := agent_image_problem(agent_image(config)):
+        problems.append(problem)
     if not _docker_ok("network", "inspect", NETWORK):
         problems.append(f"network {NETWORK} missing (rc-exp network up)")
     result = subprocess.run(
@@ -142,10 +191,8 @@ def check_environment(config: Config, *, need_credential: bool = True) -> list[s
         problems.append(f"proxy container {PROXY_CONTAINER} not running (rc-exp network up)")
     elif problem := proxy_allowlist_problem():
         problems.append(problem)
-    if need_credential and not os.environ.get(SUBSCRIPTION_CREDENTIAL):
-        problems.append(
-            f"{SUBSCRIPTION_CREDENTIAL} is not set: create it once with `claude setup-token` (subscription)"
-        )
+    if need_credential and (problem := credential_problem()):
+        problems.append(problem)
     return problems
 
 

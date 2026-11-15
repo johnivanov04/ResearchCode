@@ -73,10 +73,11 @@ defects. They test the machinery and never score a genuine trial.
    the workspace, not inside it.
 2. **Agent.** The operator runs `rc-exp session`, which opens Claude Code interactively in a
    container where only that workspace is mounted. The prompt is already entered, and the
-   model and settings are fixed. The container has a fresh home directory and a new, empty
-   Claude configuration, so none of the experimenter's settings, memory, or instructions
-   are present, and nothing carries over between trials. The only credential passed in is
-   the subscription token from `claude setup-token`. The only network route is a proxy that
+   model and settings are fixed. The container has a fresh home directory (with one setting
+   that skips Claude Code's first-run login) and a new, empty Claude configuration, so none
+   of the experimenter's settings, memory, or instructions are present, and nothing carries
+   over between trials. The only credential passed in is the subscription token from
+   `claude setup-token`. The only network route is a proxy that
    allows the model API, Anthropic's OAuth token service (for the subscription sign-in), and PyPI,
    and refuses everything else, including GitHub.
 3. **Evaluation.** The submission is copied and run in a new Docker container for every

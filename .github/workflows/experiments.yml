@@ -98,6 +98,17 @@ jobs:
       - name: Check tool versions in the agent image
         run: docker run --rm researchcode-agent:2.1.319 sh -c 'claude --version && uv --version && python --version && id -u'
 
+      - name: Check that the agent image skips Claude Code's first-run login (protocol 1.4)
+        run: |
+          python3 - <<'PY'
+          import sys
+          sys.path.insert(0, "experiments/src")
+          from rc_experiments.agent import agent_image_problem
+          problem = agent_image_problem("researchcode-agent:2.1.319")
+          assert problem is None, problem
+          print("first-run setup is marked complete in the agent image")
+          PY
+
       - name: Check that only allow-listed hosts are reachable
         run: |
           probe() {

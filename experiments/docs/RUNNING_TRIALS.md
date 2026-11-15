@@ -45,11 +45,16 @@ Mac, set `UV_PROJECT_ENVIRONMENT` to a folder outside iCloud first (see the repo
 
    Follow the browser sign-in with your Claude account. The command prints a long-lived
    token that uses your subscription. Store it in your password manager, never in a file in
-   this repository. In each terminal where you run trials:
+   this repository. A long token can wrap across lines in the terminal. Copy it as one
+   unbroken line, with no spaces or line breaks. In each terminal where you run trials, set it
+   without showing it or saving it in your shell history:
 
    ```bash
-   export CLAUDE_CODE_OAUTH_TOKEN='...'
+   read -rs CLAUDE_CODE_OAUTH_TOKEN && export CLAUDE_CODE_OAUTH_TOKEN
    ```
+
+   Paste the token and press Enter; nothing is displayed. `rc-exp check` reports a token that
+   is missing or contains whitespace, without printing it.
 
    Do **not** set `ANTHROPIC_API_KEY`. The harness never passes it into a trial, and it warns
    if it is set.
@@ -63,8 +68,8 @@ Mac, set `UV_PROJECT_ENVIRONMENT` to a folder outside iCloud first (see the repo
    uv run rc-exp check          # must print "ready for manual sessions"
    ```
 
-**After updating the repository**, rebuild and restart the proxy so it uses the current
-allowlist. `rc-exp check` reports an outdated proxy:
+**After updating the repository**, rebuild the images and restart the proxy. `rc-exp check`
+reports an outdated agent image or proxy:
 
 ```bash
 uv run rc-exp build-images
@@ -77,15 +82,21 @@ uv run rc-exp network down && uv run rc-exp network up
 uv run rc-exp preflight
 ```
 
-Claude Code opens in the agent container with an empty folder. Type:
+Claude Code opens in the agent container with an empty folder. It does not ask for a theme
+or a login. Answer the `/workspace` trust and permission-mode dialogs, then type:
 
 - `/status`: you are signed in with your Claude subscription (not an API key or Console
-  account);
+  account). If Claude Code shows a login screen, or warns that authentication was rejected
+  (401), stop: the token is not accepted. Create a new one with `claude setup-token`;
 - `/model`: `claude-opus-5-5` is available. If it is not, stop. The model must be changed for
   both conditions and recorded in the protocol before any trial;
 - `/usage`: enough plan usage remains for at least one full session (up to 45 minutes).
 
 Then type `/exit`. These commands send no message to the model.
+
+The proxy log (`docker logs rc-trials-proxy`) normally shows Claude Code's requests to
+`github.com` and `downloads.claude.ai` being refused. That is intended: neither is needed for a
+session. Never add a host to the allowlist without an amendment to the protocol.
 
 ## 3. Run one trial
 
@@ -103,7 +114,7 @@ Then type `/exit`. These commands send no message to the model.
    ```
 
 3. **During the session:**
-   - Answer only Claude Code's startup dialogs: theme, trusting `/workspace`, and the
+   - Answer only Claude Code's startup dialogs: trusting `/workspace` and the
      permission-mode warning.
    - Do not type anything while the agent works. Do not answer, guide, or correct it.
    - If the agent stops and **asks a question before it has finished**, send exactly the

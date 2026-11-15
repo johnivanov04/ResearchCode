@@ -30,6 +30,12 @@ RUN npm install -g "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" && npm cac
 
 RUN useradd --create-home --uid 1000 --shell /bin/bash agent
 USER agent
+# Mark Claude Code's first-run setup as complete (protocol 1.4). Without this, every new
+# container shows the first-run login screen even though the subscription token is passed in
+# (upstream issue anthropics/claude-code#46259). This is the state Claude Code itself records
+# after its first-run setup; nothing else is configured. The file lives only in the
+# container, which is removed after each session.
+RUN printf '{"hasCompletedOnboarding": true}\n' > /home/agent/.claude.json
 ENV DISABLE_AUTOUPDATER=1 \
     CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1 \
     UV_LINK_MODE=copy

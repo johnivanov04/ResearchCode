@@ -218,6 +218,45 @@ ERR_PROXY_TUNNEL".
 - **What is still unverified.** A real subscription-authenticated session has still not run. The
   next preflight is the test.
 
+## Pre-pilot defect: the first-run login screen ignored the token (2026-11-14, protocol 1.4)
+
+With the proxy fixed, the project owner's next preflight (`rc-exp preflight`, no prompt, no
+trial) got past the connection check but stopped at Claude Code's "Select login method" screen
+after the theme choice. `CLAUDE_CODE_OAUTH_TOKEN` was set and exported, and `rc-exp check` reported
+"ready for manual sessions".
+
+- **The token reached the container.** A check inside the owner's running preflight container
+  printed only the variable's presence, length, prefix type, and whether it contained
+  whitespace, never its value. It was set under the right name, with the prefix of a
+  subscription token.
+- **Root cause (harness).** Claude Code 2.1.319 runs its first-run setup whenever
+  `~/.claude.json` does not record `hasCompletedOnboarding`. That setup adds the login step even
+  when a token is set (upstream issue anthropics/claude-code#46259, closed without a fix).
+  Every agent container starts with a fresh home directory, so every session began with the
+  first-run setup. This was reproduced with the exact preflight command, a throwaway proxy, and
+  **fake placeholder tokens** (no real credential, no prompt):
+  - with no token, a well-formed fake token, or a fake token containing a space, the old image
+    showed the theme and then the login screen;
+  - the rebuilt image went straight to the `/workspace` trust and permission-mode dialogs and
+    then to the main screen. With a fake token, the main screen warned that authentication
+    was rejected (401), which is how a token that the server refuses appears.
+- **Fix.** The agent image writes `~/.claude.json` containing only
+  `{"hasCompletedOnboarding": true}`. This is the state Claude Code records after its own
+  first-run setup, and Claude Code writes the same flag when it prepares its own sandboxed
+  sessions. It exists only inside the container, which is removed after each session. Nothing
+  else is configured, and both conditions use the same image.
+- **Second finding (operator's token, not the harness).** The owner's token contained a single
+  space in the middle, consistent with copying a token that wrapped across terminal lines.
+  Claude Code accepts such a value, and the server would reject it. `rc-exp check` now reports
+  a token with whitespace, without printing it.
+- **Regression tests** (`tests/test_agent_onboarding.py`, plus a CI step): the Dockerfile writes
+  exactly this setting and nothing else; `rc-exp check` refuses an image without it (or with
+  other content) and a token with whitespace; error messages never contain the token.
+- **Expected refusals.** Once the main screen loads, Claude Code also tries `github.com` and
+  `downloads.claude.ai`. The proxy refuses both, as intended; the main screen still loads.
+- **What is still unverified.** No session has run with a real token. The next preflight is the
+  test: `/status` must show the Claude subscription.
+
 ## Open items
 
 - Human review of the protocol, tasks, hidden cases, and prompts before the pilot.
