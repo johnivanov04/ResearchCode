@@ -1,5 +1,5 @@
 {
-  "protocol_version": "1.3",
+  "protocol_version": "1.4",
   "status": "framework-ready",
   "status_note": "Framework implemented and verified with reference solutions, defective variants, and labelled fixtures. Trials are run manually through the experimenter's Claude Pro subscription at no additional cost. No AI trials have been run.",
   "research_question": "When the same AI coding agent, with the same model, tools, and limits, is given the same scientific programming task, does working within ResearchCode's structured workflow produce more reliable scientific software than unstructured AI coding?",

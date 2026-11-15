@@ -17,7 +17,7 @@ export const runningTrialsUrl = `${site.repository}/blob/main/${experimentsDirec
 
 /** Mirrors experiment.json `status`. Only "framework-ready" is possible until trials run. */
 export const experimentStatus = "framework-ready" as const;
-export const protocolVersion = "1.3";
+export const protocolVersion = "1.4";
 
 export const researchQuestion =
   "When the same AI coding agent, with the same model, tools, and limits, is given the same scientific programming task, does working within ResearchCode's structured workflow produce more reliable scientific software than unstructured AI coding?";
@@ -50,7 +50,7 @@ export const conditions: Condition[] = [
 export const sharedControls = [
   "Same model and Claude Code version, effort, tools, and time limit",
   "One Claude Code session per trial, started and ended by an operator who does not guide the agent, from a new, clean workspace",
-  "The same container image with Python 3.12, uv, and Git, and an empty home directory",
+  "The same container image with Python 3.12, uv, and Git, and a fresh home directory",
   "Network access only to the model API, the sign-in token service, and the Python package index; web search and GitHub are blocked",
   "Prompts do not mention the experiment, the other condition, or the hidden tests",
 ];
@@ -197,7 +197,7 @@ export const isolationSteps = [
   },
   {
     title: "Contained agent",
-    body: "Claude Code runs in a container where only that workspace is mounted, with an empty home directory and an allow-list proxy as its only network route.",
+    body: "Claude Code runs in a container where only that workspace is mounted, with a fresh home directory and an allow-list proxy as its only network route.",
   },
   {
     title: "Sandboxed evaluation",

@@ -2,8 +2,8 @@
 
 | | |
 | --- | --- |
-| Protocol version | 1.3 |
-| Written | 2026-11-11 (version 1.0); revised 2026-11-12 (versions 1.1 and 1.2) and 2026-11-14 (version 1.3), before any trial was run |
+| Protocol version | 1.4 |
+| Written | 2026-11-11 (version 1.0); revised 2026-11-12 (versions 1.1 and 1.2) and 2026-11-14 (versions 1.3 and 1.4), before any trial was run |
 | Status | Framework implemented; no trials run; the pilot is run manually through a Claude Pro subscription |
 | Additional spending | **$0.** Trials use the experimenter's existing Claude Pro subscription; no API usage, credits, or other paid services |
 | Machine-readable configuration | [`experiments/experiment.json`](../experiment.json) |
@@ -238,7 +238,9 @@ Recorded for every trial in its record (`trial.json`) and fixed in `experiment.j
 - **Environment:** a Docker container (`experiments/docker/agent/`) running as a non-root
   user, with Python 3.12, uv, and Node.js. It has a fresh home directory and a new, empty
   Claude configuration directory for every trial, so no user settings, memory, history, or
-  instruction files carry over from the experimenter's machine or from earlier trials. Only
+  instruction files carry over from the experimenter's machine or from earlier trials. The
+  image's home directory contains one Claude Code setting, which marks Claude Code's first-run
+  setup as complete (version 1.4). Only
   the trial's workspace is mounted. The Claude Code extension for VS Code is **not** used
   for trials, because it runs on the host with access to the whole repository, including
   the hidden evaluator.
@@ -253,7 +255,7 @@ Recorded for every trial in its record (`trial.json`) and fixed in `experiment.j
 The operator follows `docs/RUNNING_TRIALS.md` exactly:
 
 1. Run `rc-exp session <trial-id>`. Claude Code opens with the trial prompt already entered.
-2. Answer only Claude Code's own startup dialogs (theme, trusting `/workspace`, the
+2. Answer only Claude Code's own startup dialogs (trusting `/workspace`, the
    permission-mode warning).
 3. Do not type anything while the agent works.
 4. If the agent stops and asks a question before it has finished, send the fixed message in
@@ -398,6 +400,7 @@ from a new workspace and a new Claude configuration; an interrupted session is n
 | Date | Section | Change | Reason |
 | --- | --- | --- | --- |
 | 2026-11-11 | 4, 5.2 | While the framework was drafted, before the first freeze and before any trial: the large-offset calibration case was changed to non-integer steps; line length (E501) was removed from lint density; the sandbox now records the submission's declared package name and version as an installation would; trials in which a disallowed tool was available are marked invalid; a category-balanced sensitivity analysis was added. | Found by the evaluator validation and the fixture dry run. The details are in `docs/RESEARCH_LOG.md`. |
+| 2026-11-14 | header, 7, 7.1 | **Version 1.4, before any trial: pre-pilot harness defect.** Every new agent container showed Claude Code's first-run setup (theme, then "Select login method") although `CLAUDE_CODE_OAUTH_TOKEN` reached the container. Claude Code 2.1.319 adds the login step to its first-run setup whenever that setup has not been completed, even when the token is set (upstream issue anthropics/claude-code#46259), and each container starts with a fresh home directory. The agent image now contains `~/.claude.json` with only `{"hasCompletedOnboarding": true}`, the state Claude Code itself records after its first-run setup. The theme and login screens no longer appear; the operator still answers the `/workspace` trust and permission-mode dialogs. `rc-exp check` now refuses an agent image without this file, and a token that contains whitespace. The tasks, prompts, model, settings, hidden evaluator, expected answers, scoring, analysis, and schedule are unchanged. No trial (pilot or confirmatory) had started. | Without it, the subscription token cannot be used in a trial. The change is identical for both conditions. |
 | 2026-11-14 | header, 7 | **Version 1.3, before any trial: pre-pilot harness defect.** The agent network's proxy refused `platform.claude.com`, so interactive Claude Code stopped at startup ("Unable to connect to Anthropic services … `platform.claude.com`: ERR_PROXY_TUNNEL") before any prompt was sent. Anthropic's network requirements (code.claude.com/docs/en/network-config) list this host for OAuth token exchange, refresh, and revocation for claude.ai accounts, and the first-run connectivity check tests it. It was added to the allowlist; nothing else was. The proxy log of the failed preflight showed it as the only refused host. `rc-exp check` now detects a proxy image built with an outdated allowlist. The tasks, prompts, hidden evaluator, expected answers, scoring, analysis, and schedule are unchanged. No trial (pilot or confirmatory) had started. | The subscription sign-in cannot work without the token service. Every other host stays blocked; regression tests check that GitHub, browser sign-in pages, optional services, and arbitrary sites are refused. |
 | 2026-11-12 | 3, 5.2, 7, 10 | **Version 1.2, before any trial.** (a) Section 3: the genuine evaluator (hidden cases, references, defective variants) moved to a private repository outside the public one. It had never been committed, and its cases, expected values, and reference solutions are byte-identical to version 1.1 (verified by hash); only its import interface changed. `FREEZE.json` publishes its hashes. Public CI uses a labelled fixture evaluator. (b) Section 5.2: tests inherited unchanged from the starter kit no longer count as the submission's tests, and are not used for its mutation score. (c) Section 10: usage-limit and API-error messages in the session log are detected automatically, and credential-like strings are redacted from saved session logs. (d) Section 7: corrected instructions for turning off paid usage credits. | (a) The repository is public, and committing the hidden material would expose it. (b) Without the change, the 137 starter-kit tests would be credited to every Condition B submission. (c, d) Safety review before the pilot. |
 | 2026-11-12 | header, 1, 2, 5.2, 6, 7, 8, 10, 11, 12 | **Version 1.1, before any trial: zero additional spending.** Trials are manual, interactive Claude Code sessions through the experimenter's Claude Pro subscription, not automated `claude -p` runs. (Version 1.0 allowed an API key and set a per-trial spending limit.) The automated agent commands were removed. The per-trial spending limit (`--max-budget-usd 10`) and the total-cost estimate were removed; Pro usage limits are documented instead. Added: the operator's role and the fixed continuation message; per-trial Claude configuration directories; session-log recording; validity rules for model, effort, version, usage limits, and extra usage; a stopping rule for reduced samples; reporting of planned against achieved sample sizes. The tasks, hidden evaluator, scoring, metrics, and analysis plan are unchanged. | The experimenter's budget for additional spending is $0. |
