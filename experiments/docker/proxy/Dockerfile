@@ -2,7 +2,8 @@
 #
 # Agent containers sit on an internal Docker network with no route to the internet. This
 # proxy is the only way out, and it allows CONNECT only to the hosts in `allowlist`
-# (the model API and the Python package index). GitHub and other sites are refused, so
+# (the model API, Anthropic's OAuth token service for subscription sign-in, and the Python
+# package index). GitHub and other sites are refused, so
 # an agent cannot download this repository's hidden evaluator.
 #
 # Build: rc-exp build-images   (tag researchcode-proxy:1)

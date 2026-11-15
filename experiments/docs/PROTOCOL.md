@@ -2,8 +2,8 @@
 
 | | |
 | --- | --- |
-| Protocol version | 1.2 |
-| Written | 2026-11-11 (version 1.0); revised 2026-11-12 (versions 1.1 and 1.2), before any trial was run |
+| Protocol version | 1.3 |
+| Written | 2026-11-11 (version 1.0); revised 2026-11-12 (versions 1.1 and 1.2) and 2026-11-14 (version 1.3), before any trial was run |
 | Status | Framework implemented; no trials run; the pilot is run manually through a Claude Pro subscription |
 | Additional spending | **$0.** Trials use the experimenter's existing Claude Pro subscription; no API usage, credits, or other paid services |
 | Machine-readable configuration | [`experiments/experiment.json`](../experiment.json) |
@@ -243,7 +243,8 @@ Recorded for every trial in its record (`trial.json`) and fixed in `experiment.j
   for trials, because it runs on the host with access to the whole repository, including
   the hidden evaluator.
 - **Network:** the container is on an internal Docker network with no direct internet
-  access. A filtering proxy allows only `api.anthropic.com` (the model), `pypi.org`, and
+  access. A filtering proxy allows only `api.anthropic.com` (the model), `platform.claude.com`
+  (OAuth token exchange and refresh for the subscription sign-in; version 1.3), `pypi.org`, and
   `files.pythonhosted.org` (Python packages). GitHub and the rest of the web are blocked,
   so the agent cannot retrieve this repository's hidden evaluator.
 
@@ -397,5 +398,6 @@ from a new workspace and a new Claude configuration; an interrupted session is n
 | Date | Section | Change | Reason |
 | --- | --- | --- | --- |
 | 2026-11-11 | 4, 5.2 | While the framework was drafted, before the first freeze and before any trial: the large-offset calibration case was changed to non-integer steps; line length (E501) was removed from lint density; the sandbox now records the submission's declared package name and version as an installation would; trials in which a disallowed tool was available are marked invalid; a category-balanced sensitivity analysis was added. | Found by the evaluator validation and the fixture dry run. The details are in `docs/RESEARCH_LOG.md`. |
+| 2026-11-14 | header, 7 | **Version 1.3, before any trial: pre-pilot harness defect.** The agent network's proxy refused `platform.claude.com`, so interactive Claude Code stopped at startup ("Unable to connect to Anthropic services … `platform.claude.com`: ERR_PROXY_TUNNEL") before any prompt was sent. Anthropic's network requirements (code.claude.com/docs/en/network-config) list this host for OAuth token exchange, refresh, and revocation for claude.ai accounts, and the first-run connectivity check tests it. It was added to the allowlist; nothing else was. The proxy log of the failed preflight showed it as the only refused host. `rc-exp check` now detects a proxy image built with an outdated allowlist. The tasks, prompts, hidden evaluator, expected answers, scoring, analysis, and schedule are unchanged. No trial (pilot or confirmatory) had started. | The subscription sign-in cannot work without the token service. Every other host stays blocked; regression tests check that GitHub, browser sign-in pages, optional services, and arbitrary sites are refused. |
 | 2026-11-12 | 3, 5.2, 7, 10 | **Version 1.2, before any trial.** (a) Section 3: the genuine evaluator (hidden cases, references, defective variants) moved to a private repository outside the public one. It had never been committed, and its cases, expected values, and reference solutions are byte-identical to version 1.1 (verified by hash); only its import interface changed. `FREEZE.json` publishes its hashes. Public CI uses a labelled fixture evaluator. (b) Section 5.2: tests inherited unchanged from the starter kit no longer count as the submission's tests, and are not used for its mutation score. (c) Section 10: usage-limit and API-error messages in the session log are detected automatically, and credential-like strings are redacted from saved session logs. (d) Section 7: corrected instructions for turning off paid usage credits. | (a) The repository is public, and committing the hidden material would expose it. (b) Without the change, the 137 starter-kit tests would be credited to every Condition B submission. (c, d) Safety review before the pilot. |
 | 2026-11-12 | header, 1, 2, 5.2, 6, 7, 8, 10, 11, 12 | **Version 1.1, before any trial: zero additional spending.** Trials are manual, interactive Claude Code sessions through the experimenter's Claude Pro subscription, not automated `claude -p` runs. (Version 1.0 allowed an API key and set a per-trial spending limit.) The automated agent commands were removed. The per-trial spending limit (`--max-budget-usd 10`) and the total-cost estimate were removed; Pro usage limits are documented instead. Added: the operator's role and the fixed continuation message; per-trial Claude configuration directories; session-log recording; validity rules for model, effort, version, usage limits, and extra usage; a stopping rule for reduced samples; reporting of planned against achieved sample sizes. The tasks, hidden evaluator, scoring, metrics, and analysis plan are unchanged. | The experimenter's budget for additional spending is $0. |

@@ -111,6 +111,8 @@ jobs:
           }
           probe https://pypi.org/simple/ || { echo "pypi.org should be reachable"; exit 1; }
           probe https://api.anthropic.com/ || { echo "the model API should be reachable"; exit 1; }
+          probe https://platform.claude.com/ || { echo "the OAuth token service should be reachable"; exit 1; }
+          if probe https://claude.ai/; then echo "claude.ai (browser sign-in) must be blocked"; exit 1; fi
           if probe https://github.com/; then echo "github.com must be blocked"; exit 1; fi
           if probe https://raw.githubusercontent.com/; then echo "raw.githubusercontent.com must be blocked"; exit 1; fi
           if docker run --rm --network rc-trials-internal researchcode-agent:2.1.319 \
