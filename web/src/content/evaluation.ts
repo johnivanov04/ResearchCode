@@ -6,7 +6,8 @@ import { site } from "@/content/site";
  * Every value is copied from experiments/experiment.json, experiments/docs/PROTOCOL.md, and
  * experiments/docs/evaluator-validation.json. `evaluation.test.ts` checks each of them
  * against those files, so the published methodology cannot drift from the experiment's
- * actual configuration. No trial has been run: there are no results here.
+ * actual configuration. Data collection is in progress; no results are shown until it and the
+ * pre-registered analysis are complete.
  */
 
 export const experimentsDirectory = "experiments";
@@ -15,9 +16,9 @@ export const protocolUrl = `${site.repository}/blob/main/${experimentsDirectory}
 export const researchLogUrl = `${site.repository}/blob/main/${experimentsDirectory}/docs/RESEARCH_LOG.md`;
 export const runningTrialsUrl = `${site.repository}/blob/main/${experimentsDirectory}/docs/RUNNING_TRIALS.md`;
 
-/** Mirrors experiment.json `status`. Only "framework-ready" is possible until trials run. */
-export const experimentStatus = "framework-ready" as const;
-export const protocolVersion = "1.4";
+/** Mirrors experiment.json `status`: "framework-ready", then "data-collection" while trials run. */
+export const experimentStatus = "data-collection" as const;
+export const protocolVersion = "1.5";
 
 export const researchQuestion =
   "When the same AI coding agent, with the same model, tools, and limits, is given the same scientific programming task, does working within ResearchCode's structured workflow produce more reliable scientific software than unstructured AI coding?";
@@ -49,7 +50,7 @@ export const conditions: Condition[] = [
 
 export const sharedControls = [
   "Same model and Claude Code version, effort, tools, and time limit",
-  "One Claude Code session per trial, started and ended by an operator who does not guide the agent, from a new, clean workspace",
+  "One Claude Code session per trial from a new, clean workspace, with no one guiding the agent: the first seven started and ended by an operator, the rest unattended",
   "The same container image with Python 3.12, uv, and Git, and a fresh home directory",
   "Network access only to the model API, the sign-in token service, and the Python package index; web search and GitHub are blocked",
   "Prompts do not mention the experiment, the other condition, or the hidden tests",
@@ -177,14 +178,14 @@ export const design = {
 /** Protocol 1.1: how trials are run and paid for (mirrors experiment.json `billing` and `agent`). */
 export const access = {
   additionalSpendingUsd: 0,
-  sessionMode: "manual-interactive",
+  sessionMode: "unattended-noninteractive",
   summary:
-    "Each trial is a Claude Code session that the experimenter starts by hand, through an existing Claude Pro subscription. No API key, usage credits, or other paid services are used, and nothing calls the model automatically.",
+    "Every trial uses an existing Claude Pro subscription and nothing else: no API key, usage credits, or other paid services. The pilot and the first confirmatory trial were run by hand. From protocol 1.5, the experimenter starts batches that run the remaining trials unattended, in the randomised order; the batch refuses to start if any other credential is present.",
   operatorSteps: [
-    "Run one command, which opens Claude Code in the isolated container with the trial prompt already entered",
-    "Answer only Claude Code's own startup dialogs, then leave the agent alone",
-    "If the agent stops to ask a question, send one fixed message, the same in both conditions, at most twice",
-    "Exit when the agent says it has finished; the container stops by itself after 45 minutes",
+    "Check that paid extra usage is turned off and that only the subscription token is set",
+    "Start a batch, which runs the next trials one at a time in the randomised order, each in the isolated container with its prompt",
+    "No one guides the agent and no message is sent after the prompt; each session ends when the agent finishes, or after 45 minutes",
+    "The batch stops at once on any sign of an API key, paid usage, a usage limit, or a sign-in error, and after any trial that needs a decision",
   ],
   usageNote:
     "Claude Pro has usage limits that reset over time, so the number of trials that fit is not known in advance. Trials run in schedule order and stop only at the end of a complete block. The report states how many trials were planned and how many were achieved, and what a smaller sample cannot show.",
@@ -235,8 +236,8 @@ export const threats = [
     body: "The model service can change during collection. Blocked randomisation spreads any change across both conditions, and versions are recorded.",
   },
   {
-    title: "Manual operation",
-    body: "A person starts and ends each session. Their role is fixed and recorded, but session timing can vary, and the operator can see which condition is running.",
+    title: "Change of execution mode",
+    body: "The first seven sessions, including one confirmatory trial, were started and ended by a person; the rest run unattended, with everything else unchanged. That trial stays in the main analysis, and a separately labelled exploratory analysis shows the result without it.",
   },
   {
     title: "Subscription limits",

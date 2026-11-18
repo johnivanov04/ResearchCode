@@ -257,6 +257,72 @@ after the theme choice. `CLAUDE_CODE_OAUTH_TOKEN` was set and exported, and `rc-
 - **What is still unverified.** No session has run with a real token. The next preflight is the
   test: `/status` must show the Claude subscription.
 
+## Protocol 1.5: unattended, non-interactive sessions (2026-11-16)
+
+**State before the change.** Seven trials were complete, all as manual, interactive sessions
+under protocol 1.4 and evaluated against freeze record `b910a7b7afd0a1fd`: the six pilot trials
+and one confirmatory trial, `serial-dilution--B--r01` (Condition B, schedule position 7). All
+seven were valid, and no continuation message was sent in any of them. No confirmatory analysis
+had been run.
+
+**Decision.** The project owner can no longer supervise each session and authorised running
+the remaining trials unattended with Claude Code's non-interactive mode. The amendment is in
+protocol section 13. Before anything was changed, the results, the trial folders, and the
+version 1.4 protocol, configuration, and freeze record were backed up outside the repository
+with SHA-256 manifests, and a restore was tested. The three version 1.4 files are also kept
+verbatim in `experiments/freeze-history/`; a test checks them against the original freeze
+record's hashes.
+
+**Checks before building it (no credentials, no model usage).** Claude Code 2.1.319's bundled
+code and two runs of `claude -p` in the agent image showed the events the batch relies on: a
+`system/init` event with `apiKeySource`, model, permission mode, version, and tools; `api_retry`
+events with an error kind; `rate_limit_event` messages with `isUsingOverage` and
+`overageStatus`; and a final `result`. The two runs were made with no credential and with a
+fake placeholder token behind a throwaway proxy, so neither could authenticate. They showed
+that an authentication failure ends with `"subtype": "success"` but `"is_error": true` and
+`"terminal_reason": "api_error"`. So the batch counts a session as completed only if the
+result has `is_error` false, `terminal_reason` `completed`, and exit code 0. Transcripts are
+still written in `-p` mode, so the session log is parsed as before. Anthropic's help center
+(update of 2026-10-07) states that `claude -p` signed in with a plan draws from the
+subscription's usage limits.
+
+**What changed.**
+
+- `rc-exp batch`: sequential, in schedule order, `--limit`, `--dry-run`; resumable; lock file;
+  append-only journal.
+- Subscription-only checks before launch, and immediate stops during a session.
+- `eNN` engineering validation runs.
+- The execution mode in every new record.
+- An exploratory, separately labelled analysis without interactively run genuine trials.
+- The rerun limit, now enforced by the batch.
+
+The tasks, prompts, hidden evaluator, scoring, sample sizes, schedule, and primary analysis
+are unchanged; tests compare them with the archived version 1.4.
+
+**Tests (mocked; no model, no network).**
+
+- A mocked Claude process replays synthetic stream-json events through the real streaming
+  runner.
+- Covered: completion, every stop rule, timeouts (including a process that ignores the
+  graceful stop), failing processes, and redaction.
+- Whole batches with fake evaluation are also covered: schedule order, limits, dry runs,
+  refusals, locking, interruption, resumption after failed collection or evaluation,
+  duplicate prevention, the rerun limit, and engineering runs.
+
+**Incident during implementation.** A formatting command (`ruff format .`, then
+`ruff check --fix`) was run over the whole `experiments/` directory, which then included the
+untracked results. It changed three pilot submission files (`calibration--A--p01`,
+`enzyme-kinetics--A--p01`, `serial-dilution--A--p01`) and created four `.ruff_cache` folders in
+Condition B submissions. Within minutes, the three files were restored from the backup and the
+caches removed. All 171 results files were then verified byte for byte against the backup
+manifest. Their evaluations had been made before the change and were not affected. Ruff now
+excludes `results/`.
+
+**What is still unverified.** No session with a real token has run in non-interactive mode.
+The first engineering validation run is the test. The exact `rate_limit_event` values for a Pro
+account with extra usage off, and the `terminal_reason` of a real completed session, will be
+seen for the first time there. The batch stops on anything unexpected.
+
 ## Open items
 
 - Human review of the protocol, tasks, hidden cases, and prompts before the pilot.

@@ -1,8 +1,10 @@
 """Trial identifiers, the randomised schedule, and trial records.
 
 A trial is one agent session on one task under one condition. Its identifier is
-``<task>--<condition>--<replicate>`` where the replicate is ``pNN`` for pilot trials and
-``rNN`` for confirmatory trials. Trial records (``trial.json``) live next to the
+``<task>--<condition>--<replicate>`` where the replicate is ``pNN`` for pilot trials,
+``rNN`` for confirmatory trials, and ``eNN`` for engineering validation runs (protocol 1.5:
+tests of the harness, outside the randomised schedule and never analysed with pilot or
+confirmatory data). Trial records (``trial.json``) live next to the
 workspace, never inside it, so the agent cannot see them.
 """
 
@@ -17,14 +19,15 @@ from typing import Any
 
 from rc_experiments.config import Config
 
-DATA_KINDS = ("genuine", "pilot", "fixture")
+DATA_KINDS = ("genuine", "pilot", "engineering", "fixture")
+REPLICATE_PREFIXES = {"p": "pilot", "r": "genuine", "e": "engineering"}
 
 
 @dataclass(frozen=True)
 class TrialId:
     task: str
     condition: str
-    replicate: str  # "p01" (pilot) or "r01" (confirmatory)
+    replicate: str  # "p01" (pilot), "r01" (confirmatory), or "e01" (engineering validation)
 
     def __str__(self) -> str:
         return f"{self.task}--{self.condition}--{self.replicate}"
@@ -32,13 +35,22 @@ class TrialId:
     @classmethod
     def parse(cls, text: str) -> TrialId:
         parts = text.split("--")
-        if len(parts) != 3 or parts[2][:1] not in ("p", "r") or not parts[2][1:].isdigit():
-            raise ValueError(f"invalid trial id {text!r}; expected <task>--<condition>--<pNN|rNN>")
+        if len(parts) != 3 or parts[2][:1] not in REPLICATE_PREFIXES or not parts[2][1:].isdigit():
+            raise ValueError(f"invalid trial id {text!r}; expected <task>--<condition>--<pNN|rNN|eNN>")
         return cls(*parts)
 
     @property
     def is_pilot(self) -> bool:
         return self.replicate.startswith("p")
+
+    @property
+    def is_engineering(self) -> bool:
+        return self.replicate.startswith("e")
+
+    @property
+    def data_kind(self) -> str:
+        """The data kind implied by the replicate: pilot, genuine (confirmatory), or engineering."""
+        return REPLICATE_PREFIXES[self.replicate[0]]
 
 
 @dataclass(frozen=True)

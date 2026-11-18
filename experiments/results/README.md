@@ -1,18 +1,21 @@
 # Experiment results
 
-**No trials have been run.** These folders will hold the genuine data of the Phase 4
-experiment, written only by `rc-exp collect` and `rc-exp evaluate`, never by hand.
+These folders hold the data of the Phase 4 experiment, written only by `rc-exp collect`,
+`rc-exp evaluate`, and `rc-exp batch`, never by hand. Data collection is in progress (protocol
+1.5); no results are published until it and the pre-registered analysis are complete.
 
 | Folder | Contents |
 | --- | --- |
 | `genuine/` | Confirmatory trials (`<task>--<condition>--rNN/`), analysed as pre-registered |
 | `pilot/` | Pilot trials (`pNN`); published, but never part of the confirmatory analysis |
+| `engineering/` | Engineering validation runs (`eNN`, protocol 1.5): tests of the harness, outside the schedule, never analysed with pilot or confirmatory data |
 | `analysis/<kind>/` | Output of `rc-exp analyze` (report, tables, figures) |
 | `schedule.json` | The randomised run order, generated from the seed in `experiment.json` |
 
-Each trial folder contains `trial.json` (configuration, timing, and what Claude Code
-reported), `transcript.jsonl` (the agent session), `submission/` (the workspace as the agent
-left it, without caches or virtual environments), and `evaluation.json` (hidden-test,
-own-test, and static results).
+Each trial folder contains `trial.json` (configuration, timing, execution mode, and what
+Claude Code reported), `session-logs/` (Claude Code's session log), `submission/` (the workspace
+as the agent left it, without caches or virtual environments), and `evaluation.json`
+(hidden-test, own-test, and static results). Trials run by `rc-exp batch` also have
+`agent-output/` (Claude Code's streamed output, redacted).
 
 Fixture (dry-run) output is refused inside this folder, so it can never be mistaken for data.

@@ -15,7 +15,7 @@ This folder holds a pre-registered experiment that asks:
 | [`docs/PROTOCOL.md`](docs/PROTOCOL.md) | The pre-registered protocol: hypotheses, conditions, tasks, metrics, sample size, exclusions, analysis plan, threats to validity |
 | [`experiment.json`](experiment.json) | The same parameters, machine-readable (read by the harness and checked by the website's tests) |
 | [`FREEZE.json`](FREEZE.json) | SHA-256 of every file that defines the experiment, recorded before any trial |
-| [`docs/RUNNING_TRIALS.md`](docs/RUNNING_TRIALS.md) | How to run the trials: manual sessions in VS Code's terminal, through a Claude Pro subscription |
+| [`docs/RUNNING_TRIALS.md`](docs/RUNNING_TRIALS.md) | How to run the trials: unattended batches (`rc-exp batch`, protocol 1.5) or manual sessions, through a Claude Pro subscription |
 | [`docs/RESEARCH_LOG.md`](docs/RESEARCH_LOG.md) | How the framework was built with an AI assistant: decisions, errors, what the checks caught |
 | [`docs/REVIEW_RUBRIC.md`](docs/REVIEW_RUBRIC.md) | The blinded maintainability rubric |
 | [`docs/evaluator-validation.json`](docs/evaluator-validation.json) | Genuine evaluator validation: aggregate scores of the reference solutions and deliberate defects (not experimental results) |
@@ -32,7 +32,8 @@ experiments/
 │   ├── sandbox_scripts/       Runners executed inside the evaluation sandbox (standard library only)
 │   ├── checks.py, grading.py  Host-side grading of what the sandbox observed
 │   ├── workspace.py           Clean, isolated trial workspaces
-│   ├── agent.py               Manual Claude Code sessions in a container (subscription), or fixtures
+│   ├── agent.py               Claude Code sessions in a container (subscription): manual or unattended
+│   ├── batch.py               rc-exp batch: unattended trials in schedule order (protocol 1.5)
 │   ├── test_quality.py        Mutation score of a submission's own tests
 │   ├── static.py              Ruff (fixed rules, isolated), imports, dependencies
 │   ├── analysis.py            Pre-registered analysis, tables, figures
@@ -71,7 +72,9 @@ defects. They test the machinery and never score a genuine trial.
    Condition B only, the tracked files of `scientific-starter/`. The contents are checked
    against the plan and against every hidden file by hash. The trial record is stored next to
    the workspace, not inside it.
-2. **Agent.** The operator runs `rc-exp session`, which opens Claude Code interactively in a
+2. **Agent.** From protocol 1.5, `rc-exp batch` runs Claude Code non-interactively (`claude -p`)
+   for the next trials in schedule order (the first seven trials used `rc-exp session`, which
+   opens Claude Code interactively). Either way, Claude Code runs in a
    container where only that workspace is mounted. The prompt is already entered, and the
    model and settings are fixed. The container has a fresh home directory (with one setting
    that skips Claude Code's first-run login) and a new, empty Claude configuration, so none

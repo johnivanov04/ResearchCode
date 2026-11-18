@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -62,13 +62,14 @@ describe("the evaluation page matches the experiment's actual configuration", ()
     });
   });
 
-  it("describes the zero-cost, manual subscription procedure as configured", () => {
+  it("describes the zero-cost subscription procedure as configured", () => {
     expect(access.additionalSpendingUsd).toBe(config.billing.additional_spending_usd);
     expect(access.additionalSpendingUsd).toBe(0);
     expect(config.billing.automated_model_calls).toBe(false);
+    expect(config.billing.api_key_fallback).toBe(false);
     expect(access.sessionMode).toBe(config.agent.session_mode);
     expect(access.summary).toMatch(/Claude Pro subscription/);
-    expect(access.summary).toMatch(/nothing calls the model automatically/);
+    expect(access.summary).toMatch(/no API key/);
     expect(access.operatorSteps.join(" ")).toContain(`after ${config.agent.wall_clock_limit_minutes} minutes`);
     expect(protocol).toContain("Additional spending | **$0.**");
     expect(JSON.stringify(config)).not.toContain("max_budget_usd");
@@ -110,12 +111,10 @@ describe("the evaluation page matches the experiment's actual configuration", ()
     }
   });
 
-  it("publishes no results while no trials have been run", () => {
-    expect(config.status).toBe("framework-ready");
-    for (const kind of ["genuine", "pilot"]) {
-      const folder = join(root, "results", kind);
-      const trials = readdirSync(folder).filter((name) => statSync(join(folder, name)).isDirectory());
-      expect(trials, `${kind} trials exist; update the page with real results`).toEqual([]);
-    }
+  it("publishes no results until data collection and the analysis are complete", () => {
+    expect(["framework-ready", "data-collection"]).toContain(config.status);
+    const page = readFileSync(resolve(here, "../app/evaluation/page.tsx"), "utf8");
+    expect(page).toContain("No results yet");
+    expect(page).not.toMatch(/hidden_pass_rate|pass rate of \d/);
   });
 });

@@ -12,6 +12,9 @@
   reported only if every task x condition cell has enough valid trials; otherwise the
   results are explicitly descriptive.
 * Secondary metrics are descriptive (means, medians, bootstrap intervals; no p-values).
+* Exploratory, protocol 1.5: if some genuine trials were run interactively and others
+  unattended, the primary estimand is also computed without the interactive ones. It is
+  reported in its own, labelled section with no test, and never replaces the primary result.
 """
 
 from __future__ import annotations
@@ -25,11 +28,18 @@ from typing import Any
 import numpy as np
 from matplotlib.figure import Figure
 
+from rc_experiments.agent import EXECUTION_MODE_INTERACTIVE, execution_mode
 from rc_experiments.config import Config
 from rc_experiments.trials import now_utc, read_json, write_json
 
 FIXTURE_LABEL = "FIXTURE DATA - NOT EXPERIMENTAL RESULTS"
 PILOT_LABEL = "PILOT DATA - EXCLUDED FROM THE CONFIRMATORY ANALYSIS"
+ENGINEERING_LABEL = "ENGINEERING VALIDATION RUNS - TESTS OF THE HARNESS, NOT EXPERIMENTAL DATA"
+EXPLORATORY_MODE_LABEL = (
+    "EXPLORATORY (protocol 1.5): the primary estimand without the genuine trials that were run "
+    "interactively, before the change to unattended sessions. Not part of the pre-registered analysis; "
+    "no hypothesis test."
+)
 # Okabe-Ito colours (distinguishable with common colour-vision deficiencies); conditions are
 # also distinguished by marker shape and labelled in every legend.
 CONDITION_STYLE = {"A": {"color": "#D55E00", "marker": "o"}, "B": {"color": "#0072B2", "marker": "s"}}
@@ -72,6 +82,7 @@ def trial_row(record: dict[str, Any], evaluation: dict[str, Any]) -> dict[str, A
         "data_kind": record["data_kind"],
         "validity": record.get("validity"),
         "validity_reason": record.get("validity_reason"),
+        "execution_mode": execution_mode(record),
         "freeze_matches": evaluation["freeze"]["matches"],
         "evaluation_error": evaluation["hidden"].get("evaluation_error"),
         "hidden_pass_rate": hidden["hidden_pass_rate"],
@@ -226,7 +237,28 @@ def condition_summary(
 
 
 def _label(kind: str) -> str | None:
-    return {"fixture": FIXTURE_LABEL, "pilot": PILOT_LABEL}.get(kind)
+    return {"fixture": FIXTURE_LABEL, "pilot": PILOT_LABEL, "engineering": ENGINEERING_LABEL}.get(kind)
+
+
+def execution_mode_sensitivity(
+    included: Sequence[dict[str, Any]], kind: str, tasks: Sequence[str], resamples: int, level: float, seed: int
+) -> dict[str, Any] | None:
+    """Exploratory (protocol 1.5): the primary estimand without interactively run genuine trials.
+
+    Only computed when genuine data mix execution modes. Descriptive: no hypothesis test.
+    """
+    if kind != "genuine":
+        return None
+    interactive = [r for r in included if r["execution_mode"] == EXECUTION_MODE_INTERACTIVE]
+    if not interactive or len(interactive) == len(included):
+        return None
+    kept = [r for r in included if r["execution_mode"] != EXECUTION_MODE_INTERACTIVE]
+    return {
+        "label": EXPLORATORY_MODE_LABEL,
+        "excluded_trials": sorted(r["trial_id"] for r in interactive),
+        "trials_included": len(kept),
+        "primary": condition_summary(cells(kept, lambda r: r["hidden_pass_rate"], tasks), resamples, level, seed),
+    }
 
 
 def dot_plot(
@@ -361,6 +393,42 @@ def write_report(result: dict[str, Any], path: Path) -> None:
             f"{_ci(summary['difference_ci'])} |"
         )
     lines += ["", "Missing values (metrics the tool did not report) are excluded, never estimated.", ""]
+    modes: dict[str, int] = {}
+    for row in result["rows"]:
+        modes[str(row.get("execution_mode"))] = modes.get(str(row.get("execution_mode")), 0) + 1
+    lines += [
+        "## Execution mode",
+        "",
+        "| Execution mode | Trials analysed |",
+        "| --- | --- |",
+        *[f"| {mode} | {count} |" for mode, count in sorted(modes.items())],
+        "",
+    ]
+    sensitivity = result.get("exploratory_execution_mode")
+    if sensitivity:
+        primary_ex = sensitivity["primary"]
+        lines += [
+            "## Exploratory: without interactively run trials",
+            "",
+            f"> **{sensitivity['label']}**",
+            "",
+            f"Excluded: {', '.join(sensitivity['excluded_trials'])}. "
+            f"Trials analysed: {sensitivity['trials_included']}.",
+            "",
+            "| Task | A: n | A: mean | B: n | B: mean | B - A | 95% CI |",
+            "| --- | --- | --- | --- | --- | --- | --- |",
+        ]
+        for task, cell in primary_ex["per_task"].items():
+            lines.append(
+                f"| {task} | {cell['A']['n']} | {_fmt(cell['A']['mean'])} | {cell['B']['n']} | "
+                f"{_fmt(cell['B']['mean'])} | {_fmt(cell['difference_B_minus_A'])} | {_ci(cell['difference_ci'])} |"
+            )
+        lines += [
+            "",
+            f"Mean over tasks of (B - A), exploratory: {_fmt(primary_ex['difference_B_minus_A'])}, "
+            f"95% bootstrap CI {_ci(primary_ex['difference_ci'])}. No test is reported.",
+            "",
+        ]
     if result["excluded"]:
         lines += ["## Excluded trials", "", "| Trial | Reason |", "| --- | --- |"]
         lines += [f"| {e['trial_id']} | {e['reason']} |" for e in result["excluded"]]
@@ -461,6 +529,7 @@ def analyse(results_root: Path, out_dir: Path, config: Config) -> dict[str, Any]
             for key, _, _ in SECONDARY
         },
         "rows": included,
+        "exploratory_execution_mode": execution_mode_sensitivity(included, kind, tasks, resamples, level, seed),
     }
     write_json(out_dir / "analysis.json", result)
     write_report(result, out_dir / "report.md")

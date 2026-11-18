@@ -25,14 +25,18 @@ import {
 export const metadata: Metadata = {
   title: "Evaluation",
   description:
-    "The pre-registered ResearchCode experiment comparing unstructured AI coding with the structured ResearchCode workflow on three scientific programming tasks. The framework is implemented; no trials have been run and there are no results yet.",
+    "The pre-registered ResearchCode experiment comparing unstructured AI coding with the structured ResearchCode workflow on three scientific programming tasks. Data collection is in progress; there are no results yet.",
 };
 
 const inlineLink =
   "font-medium text-accent-700 underline decoration-accent-600/40 underline-offset-2 hover:decoration-accent-700";
 
 const progress: { step: string; detail: string; status: Status }[] = [
-  { step: "Protocol pre-registered", detail: `Version ${protocolVersion}, frozen by file hashes before any trial.`, status: "available" },
+  {
+    step: "Protocol pre-registered",
+    detail: `Version ${protocolVersion}. Frozen by file hashes before any trial; every later amendment is listed in the protocol and frozen again.`,
+    status: "available",
+  },
   {
     step: "Tasks and hidden evaluator built",
     detail: `${evaluatorValidation.totalCases} hidden cases; reference solutions pass all of them, and all ${evaluatorValidation.totalDefects} deliberate defects are caught.`,
@@ -41,13 +45,13 @@ const progress: { step: string; detail: string; status: Status }[] = [
   { step: "Isolated harness and dry run", detail: "Every stage runs end to end with labelled fixtures in place of an AI agent.", status: "available" },
   {
     step: "Pilot trials",
-    detail: "6 manual sessions through a Claude Pro subscription, run as its usage allows, to check the harness and how many trials fit.",
-    status: "planned",
+    detail: "6 manual sessions through a Claude Pro subscription, to check the harness and how many trials fit. Never part of the confirmatory analysis.",
+    status: "available",
   },
   {
     step: "Confirmatory trials",
-    detail: `Up to ${design.confirmatoryTrialsPerCell} per task and condition (60 in all), as subscription usage allows.`,
-    status: "planned",
+    detail: `Up to ${design.confirmatoryTrialsPerCell} per task and condition (60 in all), as subscription usage allows. The first was run by hand; the rest run unattended (protocol 1.5).`,
+    status: "in-progress",
   },
   { step: "Analysis and results", detail: "The pre-registered analysis, published here, including unfavourable results.", status: "planned" },
 ];
@@ -154,8 +158,8 @@ export default function EvaluationPage() {
         title="Two conditions, one difference"
         intro={
           <p>
-            Each trial is a single session of the same AI coding agent, started and ended by an operator who does not
-            guide it. The structured workflow is the only thing that differs between the conditions.
+            Each trial is a single session of the same AI coding agent, which no one guides. The structured workflow
+            is the only thing that differs between the conditions.
           </p>
         }
       >
@@ -239,7 +243,7 @@ export default function EvaluationPage() {
       <Section
         id="sessions"
         eyebrow="Running trials"
-        title="Manual sessions at no additional cost"
+        title="Unattended sessions at no additional cost"
         intro={<p>{access.summary}</p>}
       >
         <ol className="mt-8 grid gap-4 md:grid-cols-2">
@@ -294,7 +298,7 @@ export default function EvaluationPage() {
               ["Pilot", `${design.pilotTrialsPerCell} trial per task and condition (excluded from analysis)`],
               ["Confirmatory trials", `${design.confirmatoryTrialsPerCell} per task and condition`],
               ["Order", `Blocks with every task × condition once, randomised (seed ${design.scheduleSeed})`],
-              ["Access", "Manual Claude Code sessions through a Claude Pro subscription; $0 additional spending"],
+              ["Access", "Claude Code sessions through a Claude Pro subscription, unattended from protocol 1.5; $0 additional spending"],
               ["Time limit per trial", `${design.wallClockMinutes} minutes`],
               ["Evaluation limits", `${design.caseTimeoutSeconds} s per hidden case, no network`],
             ].map(([term, value]) => (
@@ -382,8 +386,8 @@ export default function EvaluationPage() {
         <div className="mt-6 rounded-xl border border-dashed border-navy-200 bg-surface px-6 py-12 text-center">
           <p className="font-semibold text-ink">No results yet</p>
           <p className="mx-auto mt-2 max-w-lg leading-7 text-body">
-            No trials have been run. Results will appear here only after the pre-registered trials and analysis
-            are complete, including results that do not favour the structured workflow.
+            Data collection is in progress. Results will appear here only after the pre-registered trials and
+            analysis are complete, including results that do not favour the structured workflow.
           </p>
         </div>
       </Section>

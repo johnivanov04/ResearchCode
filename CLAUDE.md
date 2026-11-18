@@ -18,9 +18,10 @@ Plan and phase status: `docs/PROJECT_PLAN.md`.
 - `growth-analysis/` — growth-curve analysis application built from the starter (Phase 3). It has its own
   `AGENTS.md`/`CLAUDE.md`; follow them, and change `docs/spec-growth-curve.md` before changing the method.
 - `experiments/` — pre-registered Phase 4 experiment (protocol, tasks, hidden evaluator, harness). It has its
-  own `AGENTS.md`/`CLAUDE.md`; follow them. Never copy hidden material into workspaces or the website. Trials are
-  manual Claude Code sessions run by the human through their Claude Pro subscription ($0 additional spending):
-  never start a session, call a model API, or add an API key or automated model call.
+  own `AGENTS.md`/`CLAUDE.md`; follow them. Never copy hidden material into workspaces or the website. Trials run
+  through the human's Claude Pro subscription ($0 additional spending): manual sessions (protocols 1.1-1.4) and,
+  from protocol 1.5, unattended `rc-exp batch` runs that only the human starts. Never start a session or batch,
+  call a model API, add an API key or API-key fallback, or add any other automated model call.
 - `docs/` — plans and design docs.
 
 ## Website conventions

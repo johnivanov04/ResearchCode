@@ -1,7 +1,7 @@
 {
-  "protocol_version": "1.4",
-  "status": "framework-ready",
-  "status_note": "Framework implemented and verified with reference solutions, defective variants, and labelled fixtures. Trials are run manually through the experimenter's Claude Pro subscription at no additional cost. No AI trials have been run.",
+  "protocol_version": "1.5",
+  "status": "data-collection",
+  "status_note": "Data collection in progress. The pilot (6 trials) and the first confirmatory trial were run as manual, interactive sessions under protocol 1.4; from protocol 1.5 the remaining trials run unattended and non-interactively with rc-exp batch, through the experimenter's Claude Pro subscription at no additional cost. No results are published until data collection and the pre-registered analysis are complete.",
   "research_question": "When the same AI coding agent, with the same model, tools, and limits, is given the same scientific programming task, does working within ResearchCode's structured workflow produce more reliable scientific software than unstructured AI coding?",
   "primary_hypothesis": "The mean share of hidden evaluation cases passed differs between the structured condition (B) and the unstructured condition (A), averaged over tasks with equal weight (expected direction B > A; two-sided test).",
   "conditions": [
@@ -65,7 +65,48 @@
     "tool_version": "2.1.319",
     "model": "claude-opus-5-5",
     "effort": "high",
-    "session_mode": "manual-interactive",
+    "session_mode": "unattended-noninteractive",
+    "session_mode_history": [
+      {
+        "protocol_versions": "1.1-1.4",
+        "session_mode": "manual-interactive",
+        "command": "rc-exp session",
+        "trials": [
+          "enzyme-kinetics--B--p01",
+          "serial-dilution--B--p01",
+          "serial-dilution--A--p01",
+          "enzyme-kinetics--A--p01",
+          "calibration--A--p01",
+          "calibration--B--p01",
+          "serial-dilution--B--r01"
+        ]
+      },
+      {
+        "protocol_versions": "1.5",
+        "session_mode": "unattended-noninteractive",
+        "command": "rc-exp batch",
+        "trials": "every trial started after the version 1.5 amendment"
+      }
+    ],
+    "noninteractive": {
+      "claude_flags": [
+        "-p",
+        "--output-format",
+        "stream-json",
+        "--verbose"
+      ],
+      "bare_mode": false,
+      "continuation_messages": 0,
+      "stop_immediately_on": [
+        "an API key source other than none",
+        "paid overage in use or available",
+        "the plan's usage limit (rate limit rejected)",
+        "authentication, billing, or rate-limit errors",
+        "a model, permission mode, tool version, or tool set that differs from this configuration",
+        "any mention of extra usage"
+      ],
+      "completed_when": "a result with is_error false and terminal_reason completed, exit code 0"
+    },
     "wall_clock_limit_minutes": 45,
     "permission_mode": "bypassPermissions",
     "disallowed_tools": [
@@ -183,6 +224,14 @@
       "CLAUDE_CODE_USE_VERTEX"
     ],
     "extra_usage": "must be turned off in the Claude account; a session that reports extra usage is stopped and invalid",
-    "automated_model_calls": false
+    "automated_model_calls": false,
+    "unattended_sessions": "rc-exp batch only (protocol 1.5), started by the operator; Claude Code sessions authenticated solely with the subscription token",
+    "api_key_fallback": false,
+    "refuse_to_start_if": [
+      "the subscription token is missing, contains whitespace, or is not a token from claude setup-token",
+      "any ANTHROPIC_*, CLAUDE_CODE_USE_*, or CLAUDE_CODE_API_KEY* variable is set",
+      "the operator has not confirmed that extra usage is off",
+      "files differ from FREEZE.json"
+    ]
   }
 }

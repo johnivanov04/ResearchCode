@@ -74,7 +74,7 @@ const toolkit: { title: string; body: string; href: string; status: Status; cta:
   },
   {
     title: "Evaluation",
-    body: "A pre-registered comparison of unstructured AI coding and the structured workflow on three scientific tasks. The framework is built; trials have not been run.",
+    body: "A pre-registered comparison of unstructured AI coding and the structured workflow on three scientific tasks. The framework is built; data collection is in progress.",
     href: "/evaluation",
     status: "in-progress",
     cta: "Read the study design",

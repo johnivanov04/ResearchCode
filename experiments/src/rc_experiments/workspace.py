@@ -140,15 +140,17 @@ def prepare(trial: TrialId, trials_root: Path, config: Config, data_kind: str) -
     """Create ``<trials_root>/<trial>/workspace`` for a trial and record it. Returns the trial directory."""
     if data_kind not in DATA_KINDS:
         raise ValueError(f"data kind must be one of {DATA_KINDS}")
-    if (data_kind == "pilot") != trial.is_pilot and data_kind != "fixture":
-        raise ValueError("pilot trials have replicates pNN and pilot data kind; confirmatory trials rNN")
+    if data_kind != "fixture" and data_kind != trial.data_kind:
+        raise ValueError(
+            "the replicate must match the data kind: pNN pilot, rNN genuine (confirmatory), eNN engineering"
+        )
     config.condition(trial.condition)
     if data_kind == "fixture":
         task_dir = task_directory(trial.task, config)
     else:
         config.task(trial.task)
         task_dir = TASKS_DIR / trial.task
-        load_genuine()  # genuine and pilot trials need the private evaluator to be checked and scored
+        load_genuine()  # genuine, pilot, and engineering trials need the private evaluator
     trials_root = trials_root.resolve()
     if trials_root.is_relative_to(REPO_DIR.resolve()):
         raise IsolationError("the trials root must be outside the repository")

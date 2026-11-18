@@ -140,5 +140,5 @@ def load_fixture() -> Evaluator:
 
 
 def for_data_kind(kind: str) -> Evaluator:
-    """Fixture trials use the fixture evaluator; genuine and pilot trials use the private evaluator."""
+    """Fixture trials use the fixture evaluator; genuine, pilot, and engineering trials the private one."""
     return load_fixture() if kind == "fixture" else load_genuine()

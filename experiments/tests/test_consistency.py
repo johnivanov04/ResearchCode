@@ -36,7 +36,9 @@ def test_protocol_states_the_configured_parameters(config):
     for name in config.raw["billing"]["forbidden_credentials"][:3]:
         assert f"`{name}`" in PROTOCOL
     assert "--max-budget-usd 10`) and the total-cost estimate were removed" in PROTOCOL  # recorded as an amendment
-    assert "Claude Code 2.1.319 in **interactive mode**" in PROTOCOL
+    assert "Versions 1.1 to 1.4: **interactive mode**" in PROTOCOL
+    assert "From version 1.5: **non-interactive mode**" in PROTOCOL
+    assert "never `--bare`" in PROTOCOL
     assert "at most twice per trial" in PROTOCOL
     assert agent["max_continuation_messages"] == 2
     assert f"{design['confirmatory_trials_per_cell']} trials per task and condition" in PROTOCOL
