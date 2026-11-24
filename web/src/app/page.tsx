@@ -74,10 +74,10 @@ const toolkit: { title: string; body: string; href: string; status: Status; cta:
   },
   {
     title: "Evaluation",
-    body: "A pre-registered comparison of unstructured AI coding and the structured workflow on three scientific tasks. The framework is built; data collection is in progress.",
+    body: "A completed, pre-registered comparison of unstructured AI coding and the structured workflow in 60 trials on three scientific tasks. Both conditions passed every hidden evaluation case, a ceiling rather than proof of equivalence. The workflow added extensive tests, at about four times the session time.",
     href: "/evaluation",
-    status: "in-progress",
-    cta: "Read the study design",
+    status: "available",
+    cta: "See the results",
   },
 ];
 

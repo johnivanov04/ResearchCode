@@ -1,5 +1,8 @@
 import { render } from "@testing-library/react";
 import type { ReactElement } from "react";
+import { existsSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import AboutPage from "@/app/about/page";
 import EvaluationPage from "@/app/evaluation/page";
@@ -11,10 +14,11 @@ import HomePage from "@/app/page";
 import StarterKitPage from "@/app/starter-kit/page";
 import { guides } from "@/content/guides";
 import { primaryNav } from "@/content/site";
-import { protocolUrl } from "@/content/evaluation";
+import { protocolUrl, reportUrl } from "@/content/evaluation";
 import { appSourceUrl } from "@/content/growth-analysis";
 import { starterSourceUrl } from "@/content/starter-kit";
 
+const publicDir = resolve(dirname(fileURLToPath(import.meta.url)), "../../public");
 const knownRoutes = new Set(["/", ...primaryNav.map((item) => item.href), ...guides.map((g) => `/guides/${g.slug}`)]);
 
 async function renderGuide(slug: string) {
@@ -40,7 +44,9 @@ function expectWellFormed(container: HTMLElement) {
     if (href.startsWith("#")) {
       expect(container.querySelector(href), `missing anchor target ${href}`).not.toBeNull();
     } else if (href.startsWith("/")) {
-      expect(knownRoutes.has(href.split("#")[0]), `broken link ${href}`).toBe(true);
+      const path = href.split("#")[0];
+      // A route, or a static file served from web/public (such as the report PDF).
+      expect(knownRoutes.has(path) || existsSync(join(publicDir, path)), `broken link ${href}`).toBe(true);
     }
   }
 
@@ -85,18 +91,46 @@ describe("honesty requirements", () => {
     expect(container.querySelector('a[href="/example#application"]')).not.toBeNull();
   });
 
-  it("evaluation page presents the implemented framework with no results", () => {
+  it("evaluation page presents the completed experiment without overclaiming", () => {
     const { container } = render(<EvaluationPage />);
-    expect(container.textContent).toMatch(/Framework implemented; results pending/);
-    expect(container.textContent).toMatch(/No AI trials have\s+been run/);
-    expect(container.textContent).toMatch(/No results yet/);
-    expect(container.textContent).toMatch(/not experimental results/);
-    expect(container.textContent).toMatch(/Claude Pro subscription/);
-    expect(container.textContent).toMatch(/\$0 additional spending/);
-    expect(container.textContent).not.toMatch(/API key is used|of model use/);
+    const text = container.textContent ?? "";
+    // The null primary result and the ceiling are stated prominently.
+    expect(text).toMatch(/no difference in measured correctness/);
+    expect(text).toMatch(/passed every hidden evaluation case/);
+    expect(text).toMatch(/was not supported/);
+    expect(text).toMatch(/not evidence that the two workflows are equally reliable/);
+    expect(text).toMatch(/A ceiling, not evidence of equivalence/);
+    expect(text).toMatch(/p = 1\.0000/);
+    // Secondary results are labelled descriptive, with the treatment's own role disclosed.
+    expect(text).toMatch(/descriptive/);
+    expect(text).toMatch(/not hypothesis tests/);
+    expect(text).toMatch(/Tests were part of the treatment/);
+    expect(text).toMatch(/Three zeros are a measurement failure/);
+    expect(text).toMatch(/No security difference/);
+    expect(text).toMatch(/Claude Pro subscription/);
+    expect(text).toMatch(/\$0 additional spending/);
+    expect(text).not.toMatch(/API key is used|of model use|results pending|No results yet/);
+    // The report is linked as a PDF served by this site; nothing links to non-public results.
+    expect(text).toMatch(/Read the full research report/);
+    expect(container.querySelectorAll(`a[href="${reportUrl}"]`).length).toBeGreaterThanOrEqual(2);
+    expect(existsSync(join(publicDir, reportUrl!))).toBe(true);
+    for (const anchor of container.querySelectorAll("a[href]")) {
+      const href = anchor.getAttribute("href")!;
+      expect(href).not.toMatch(/results\/|researchcode-private/);
+      if (href.endsWith(".pdf")) expect(href).toBe(reportUrl);
+    }
+    // Public aggregate findings are distinguished from private per-trial results.
+    expect(text).toMatch(/Kept private/);
+    expect(text).toMatch(/Pilot results/);
+    expect(text).toMatch(/Publication commitments not kept/);
+    expect(text).not.toMatch(/not yet public|Not yet public|currently show the design as frozen under protocol 1\.4/);
     expect(container.querySelector(`a[href="${protocolUrl}"]`)).not.toBeNull();
-    // Results are never shown before trials exist: no percentage other than the reference checks.
-    expect(container.querySelector("#results")?.textContent).not.toMatch(/\d+%/);
+    // Every chart is a real table with a caption, so its values are available as text.
+    const charts = container.querySelectorAll("figure table");
+    expect(charts.length).toBe(5);
+    for (const table of charts) {
+      expect(table.querySelector("caption")?.textContent?.length ?? 0).toBeGreaterThan(20);
+    }
   });
 
   it("example page labels its data as synthetic and illustrative", () => {

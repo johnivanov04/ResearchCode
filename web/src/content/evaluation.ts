@@ -6,8 +6,8 @@ import { site } from "@/content/site";
  * Every value is copied from experiments/experiment.json, experiments/docs/PROTOCOL.md, and
  * experiments/docs/evaluator-validation.json. `evaluation.test.ts` checks each of them
  * against those files, so the published methodology cannot drift from the experiment's
- * actual configuration. Data collection is in progress; no results are shown until it and the
- * pre-registered analysis are complete.
+ * actual configuration. The experiment is complete; its aggregate results are in
+ * `evaluation-results.ts`, checked against the frozen analysis output.
  */
 
 export const experimentsDirectory = "experiments";
@@ -15,8 +15,17 @@ export const experimentsUrl = `${site.repository}/tree/main/${experimentsDirecto
 export const protocolUrl = `${site.repository}/blob/main/${experimentsDirectory}/docs/PROTOCOL.md`;
 export const researchLogUrl = `${site.repository}/blob/main/${experimentsDirectory}/docs/RESEARCH_LOG.md`;
 export const runningTrialsUrl = `${site.repository}/blob/main/${experimentsDirectory}/docs/RUNNING_TRIALS.md`;
+export const reportSourceUrl = `${site.repository}/blob/main/${experimentsDirectory}/docs/FINAL_REPORT.md`;
+export const aggregateResultsUrl = `${site.repository}/blob/main/${experimentsDirectory}/docs/aggregate-results.json`;
+export const protocol14Url = `${site.repository}/blob/main/${experimentsDirectory}/freeze-history/PROTOCOL-1.4.md`;
+/** The merge that gave protocol 1.4 its only third-party timestamp, before the first pilot session. */
+export const protocol14MergeUrl = `${site.repository}/pull/5`;
 
-/** Mirrors experiment.json `status`: "framework-ready", then "data-collection" while trials run. */
+/**
+ * Mirrors experiment.json `status`. That file is frozen by hash, so the field still reads
+ * "data-collection" although all trials and the pre-registered analysis are complete; completion
+ * is recorded by the analysis output and the research log, not by this field.
+ */
 export const experimentStatus = "data-collection" as const;
 export const protocolVersion = "1.5";
 
@@ -158,7 +167,7 @@ export const secondaryMetrics: { name: string; how: string; kind: "objective" | 
   { name: "Static security findings", how: "Ruff security (S) rules on non-test code, with a fixed rule set that ignores the submission's own configuration.", kind: "objective" },
   { name: "Lint density and dependencies", how: "Findings per 100 lines, runtime dependencies beyond NumPy and SciPy, and lock files.", kind: "objective" },
   { name: "Development effort", how: "Wall-clock time, plus the turns, tokens, and cost that Claude Code reports. Unreported values stay missing.", kind: "objective" },
-  { name: "Blinded maintainability review", how: "A human scores clarity, units and assumptions, validation, and structure (1–4) on anonymised code.", kind: "subjective" },
+  { name: "Blinded maintainability review", how: "Planned: a human scores clarity, units and assumptions, validation, and structure (1–4) on anonymised code. Not conducted.", kind: "subjective" },
 ];
 
 export const design = {
@@ -180,15 +189,15 @@ export const access = {
   additionalSpendingUsd: 0,
   sessionMode: "unattended-noninteractive",
   summary:
-    "Every trial uses an existing Claude Pro subscription and nothing else: no API key, usage credits, or other paid services. The pilot and the first confirmatory trial were run by hand. From protocol 1.5, the experimenter starts batches that run the remaining trials unattended, in the randomised order; the batch refuses to start if any other credential is present.",
+    "Every trial used an existing Claude Pro subscription and nothing else: no API key, usage credits, or other paid services. The pilot and the first confirmatory trial were run by hand. Under protocol 1.5, the experimenter started batches that ran the remaining 59 trials unattended, in the randomised order; a batch refused to start if any other credential was present.",
   operatorSteps: [
-    "Check that paid extra usage is turned off and that only the subscription token is set",
-    "Start a batch, which runs the next trials one at a time in the randomised order, each in the isolated container with its prompt",
-    "No one guides the agent and no message is sent after the prompt; each session ends when the agent finishes, or after 45 minutes",
-    "The batch stops at once on any sign of an API key, paid usage, a usage limit, or a sign-in error, and after any trial that needs a decision",
+    "The operator checked that paid extra usage was turned off and that only the subscription token was set",
+    "A batch ran the next trials one at a time in the randomised order, each in the isolated container with its prompt",
+    "No one guided the agent and no message was sent after the prompt; each session ended when the agent finished, or would have ended after 45 minutes",
+    "A batch stopped at once on any sign of an API key, paid usage, a usage limit, or a sign-in error, and after any trial that needed a decision",
   ],
   usageNote:
-    "Claude Pro has usage limits that reset over time, so the number of trials that fit is not known in advance. Trials run in schedule order and stop only at the end of a complete block. The report states how many trials were planned and how many were achieved, and what a smaller sample cannot show.",
+    "All 60 planned confirmatory trials were completed and analysed. Two attempts were stopped by infrastructure, one by the subscription's usage limit and one by dropped connections while the host computer slept, and both were rerun from a new workspace under the pre-registered rule. Neither stopped attempt was evaluated.",
 };
 
 export const isolationSteps = [
@@ -210,41 +219,117 @@ export const isolationSteps = [
   },
   {
     title: "A private evaluator",
-    body: "The hidden cases, reference solutions, and deliberate defects are kept outside this public repository until data collection ends. Their SHA-256 hashes are published in the freeze record, so anyone can check later that they did not change.",
+    body: "The hidden cases, reference solutions, and deliberate defects are kept in a private repository. Their SHA-256 hashes are in the freeze record. The protocol promised to release them after data collection; they were not released (see limitations).",
   },
 ];
 
-export const threats = [
+/**
+ * Limitations of the completed experiment, including problems found after the analysis ran.
+ * Each is stated in the final report (not yet public) and the research log.
+ */
+export const limitations = [
   {
-    title: "Small task set and sample",
-    body: "Three small tasks and 10 trials per cell can show only large differences, on these tasks. Cells with fewer than 5 valid trials are reported descriptively.",
+    title: "A ceiling, not equivalence",
+    body: "Every submission passed every hidden case, so the primary measure had no variation and could not separate the conditions. Harder or less specified tasks might.",
   },
   {
-    title: "Designer bias",
-    body: "The tasks and the evaluator were designed by the project team with help from the same family of AI model being evaluated. They were frozen before any trial.",
+    title: "One configuration, three small tasks",
+    body: "One agent (Claude Code 2.1.319, claude-opus-5-5, high effort), three small and precisely specified tasks, and 10 trials per task and condition. Other models, tools, and tasks may behave differently.",
+  },
+  {
+    title: "Tests were part of the treatment",
+    body: "Condition B was told to write tests and run Ruff; Condition A was neither asked nor prevented. More tests and fewer lint findings in B are partly a direct consequence of those instructions.",
+  },
+  {
+    title: "Mutation measurement failed in three trials",
+    body: "In three serial-dilution trials in Condition B, no test counted as valid, so the mutation score was recorded as 0. Each suite imports a custom exception class that the reference solution does not define, which most likely stopped the whole test run against the reference; the original run output was not kept. Those zeros record a measurement failure, not ineffective tests, and can only lower B's average.",
+  },
+  {
+    title: "The security metric was misclassified",
+    body: "The security count also included Ruff's SIM (simplification) rules. Counting only true security (S) rules, both conditions had zero findings. No security difference is claimed.",
+  },
+  {
+    title: "No maintainability review",
+    body: "The planned blinded human review of code quality was not conducted, for reasons of time and resources decided before the results were seen. Maintainability is unmeasured.",
+  },
+  {
+    title: "An amendment during data collection",
+    body: "Protocol 1.5 switched from hand-run to unattended sessions after the first confirmatory trial. Its records are timestamped by the project itself, and it was first published on GitHub with these results, so it has no independent timestamp that predates the first unattended trial. Protocol 1.4 was merged on GitHub before the first pilot session.",
+  },
+  {
+    title: "Evaluator built by the same project",
+    body: "The tasks, hidden cases, and evaluator were designed by this project, with help from the same family of AI model that was evaluated, and validated only by the project. No external team checked them.",
+  },
+  {
+    title: "Publication commitments not kept",
+    body: "The protocol promised to release the evaluator after data collection, to publish the pilot results, and to publish every attempt. After the analysis and unblinding, these were withheld. This deviation from the publication plan was not pre-registered and changes no method or result, but it limits independent replication and auditing.",
   },
   {
     title: "Agents, not people",
-    body: "The trials measure an AI agent working alone. They do not show how human researchers would use either workflow.",
+    body: "The trials measure an AI agent working alone with web search blocked. They do not show how human researchers would use either workflow.",
+  },
+];
+
+/**
+ * What the public release contains, worded to be true once it is published. The report PDF is
+ * served by this site from web/public; `reportUrl` must point at a file that exists there.
+ */
+export const reportUrl: string | null = "/reports/ResearchCode_Final_Report.pdf";
+
+export const materials: { name: string; detail: string; public: boolean }[] = [
+  {
+    name: "Final research report",
+    detail: "As a PDF on this site and as Markdown in the repository.",
+    public: true,
   },
   {
-    title: "Adapted treatment",
-    body: "The starter kit tells assistants to stop and ask a human. With no human present, Condition B records its decisions instead.",
+    name: "Pre-registered protocol 1.4",
+    detail: "Merged on GitHub before the first pilot session, its only independent timestamp; kept verbatim with its configuration and freeze record.",
+    public: true,
   },
   {
-    title: "Model drift",
-    body: "The model service can change during collection. Blocked randomisation spreads any change across both conditions, and versions are recorded.",
+    name: "Protocol 1.5 amendment and batch runner",
+    detail: "Documented in the protocol's amendment table and a new freeze record during data collection, and first published with these results.",
+    public: true,
   },
   {
-    title: "Change of execution mode",
-    body: "The first seven sessions, including one confirmatory trial, were started and ended by a person; the rest run unattended, with everything else unchanged. That trial stays in the main analysis, and a separately labelled exploratory analysis shows the result without it.",
+    name: "Tasks, prompts, harness, and fixture evaluator",
+    detail: "With the aggregate evaluator validation and the freeze record's file hashes.",
+    public: true,
   },
   {
-    title: "Subscription limits",
-    body: "Usage limits may allow fewer trials than planned, which widens the uncertainty. Sessions interrupted by a limit are invalid and rerun from scratch.",
+    name: "Research log",
+    detail: "Including data collection, the analysis, and the post-hoc diagnostics.",
+    public: true,
   },
   {
-    title: "No web search",
-    body: "Both conditions lose web search, which some real workflows use. This also keeps the project's public materials out of the agent's reach.",
+    name: "Aggregate results",
+    detail: "Means, medians, and intervals per condition and task, on this page and as a JSON summary in the repository.",
+    public: true,
+  },
+  {
+    name: "Analysis figures",
+    detail: "Three figures in the report that plot every confirmatory trial's value as an unlabelled dot, by task and condition.",
+    public: true,
+  },
+  {
+    name: "Hidden evaluator",
+    detail: "Cases, expected values, reference solutions, and deliberate defects. The protocol promised to release it after data collection.",
+    public: false,
+  },
+  {
+    name: "Pilot results",
+    detail: "The six pilot trials. The protocol promised to publish them separately.",
+    public: false,
+  },
+  {
+    name: "Per-trial confirmatory results and invalid attempts",
+    detail: "Trial records, submissions, session logs, the full analysis output, and the two invalid attempts. The protocol promised to publish every attempt. Evaluation records name hidden cases.",
+    public: false,
+  },
+  {
+    name: "Review packets and blinding key",
+    detail: "Prepared for the maintainability review that was not conducted; never used.",
+    public: false,
   },
 ];

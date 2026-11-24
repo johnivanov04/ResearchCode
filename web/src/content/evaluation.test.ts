@@ -10,9 +10,15 @@ import {
   evaluatorValidation,
   experimentStatus,
   experimentsDirectory,
+  limitations,
+  materials,
   primaryMetric,
   protocolUrl,
   protocolVersion,
+  aggregateResultsUrl,
+  protocol14Url,
+  reportSourceUrl,
+  reportUrl,
   researchLogUrl,
   researchQuestion,
   runningTrialsUrl,
@@ -111,10 +117,49 @@ describe("the evaluation page matches the experiment's actual configuration", ()
     }
   });
 
-  it("publishes no results until data collection and the analysis are complete", () => {
+  it("shows results only from the completed analysis, and links to nothing that is not public", () => {
+    // experiment.json is frozen by hash, so its status field still reads "data-collection".
     expect(["framework-ready", "data-collection"]).toContain(config.status);
     const page = readFileSync(resolve(here, "../app/evaluation/page.tsx"), "utf8");
-    expect(page).toContain("No results yet");
-    expect(page).not.toMatch(/hidden_pass_rate|pass rate of \d/);
+    expect(page).not.toContain("No results yet");
+    // Never link to non-public material: the results directory or the private evaluator.
+    expect(page).not.toMatch(/results\/analysis|researchcode-private/);
+    // The report is served from web/public, and its Markdown source and the other linked documents exist.
+    expect(reportUrl).toBe("/reports/ResearchCode_Final_Report.pdf");
+    expect(existsSync(resolve(here, "../../public", `.${reportUrl}`))).toBe(true);
+    for (const url of [reportSourceUrl, aggregateResultsUrl, protocol14Url]) {
+      const path = url.replace(`${site.repository}/blob/main/${experimentsDirectory}/`, "");
+      expect(existsSync(join(root, path)), url).toBe(true);
+    }
+    // Public: what the release contains. Private: per-trial and evaluator material.
+    const isPublic = (name: string) => materials.find((m) => m.name === name)?.public;
+    expect(isPublic("Final research report")).toBe(true);
+    expect(isPublic("Protocol 1.5 amendment and batch runner")).toBe(true);
+    expect(isPublic("Per-trial confirmatory results and invalid attempts")).toBe(false);
+    expect(isPublic("Pilot results")).toBe(false);
+    expect(isPublic("Hidden evaluator")).toBe(false);
+    // The unkept publication commitments are acknowledged, not contradicted.
+    const privateText = materials.filter((m) => !m.public).map((m) => m.detail).join(" ");
+    expect(privateText).toMatch(/promised to release it after data collection/);
+    expect(privateText).toMatch(/promised to publish them separately/);
+    expect(privateText).toMatch(/promised to publish every attempt/);
+    expect(isPublic("Review packets and blinding key")).toBe(false);
+  });
+
+  it("discloses every limitation the final report names", () => {
+    const text = limitations.map((l) => `${l.title} ${l.body}`).join(" ");
+    for (const phrase of [
+      /ceiling/i,
+      /one agent/i,
+      /told to write tests/,
+      /measurement failure, not ineffective tests/,
+      /No security difference is claimed/,
+      /not conducted/,
+      /no independent timestamp that predates the first unattended trial/,
+      /No external team/,
+      /deviation from the publication plan was not pre-registered/,
+    ]) {
+      expect(text).toMatch(phrase);
+    }
   });
 });

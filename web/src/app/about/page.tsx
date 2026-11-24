@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader, Section } from "@/components/page-header";
 import { StatusBadge, type Status } from "@/components/status-badge";
+import { site } from "@/content/site";
 
 export const metadata: Metadata = {
   title: "About",
@@ -32,7 +33,7 @@ const roadmap: { phase: string; title: string; body: string; status: Status }[] 
   { phase: "Phase 1", title: "Website and foundation", body: "This site, the first guides, and the project's engineering setup.", status: "available" },
   { phase: "Phase 2", title: "Scientific Python starter kit", body: "A reusable template with uv, pytest, Hypothesis, Ruff, CI, AI assistant instructions, and run metadata.", status: "available" },
   { phase: "Phase 3", title: "Worked scientific application", body: "A bacterial growth-curve analysis application built with the starter kit, validated on synthetic data with known answers.", status: "available" },
-  { phase: "Phase 4", title: "Controlled evaluation", body: "A pre-registered comparison of unstructured and structured AI-assisted development. The protocol, tasks, hidden evaluator, and isolated harness are built; data collection is in progress.", status: "in-progress" },
+  { phase: "Phase 4", title: "Controlled evaluation", body: "A pre-registered comparison of unstructured and structured AI-assisted development, completed in 60 trials. Both conditions passed every hidden evaluation case; the workflow changed the tests produced and the time taken, not measured correctness. The full report is on the evaluation page.", status: "available" },
   { phase: "Phase 5", title: "Deployment and polish", body: "Public deployment, accessibility audit, and documentation review.", status: "planned" },
 ];
 
@@ -112,16 +113,26 @@ export default function AboutPage() {
         title="Built in the open"
         intro={
           <p>
-            The website, guides, starter kit, and experiment materials will all be published as open source so
-            that others can reuse and adapt them. Licensing for code and written content will be confirmed before
-            the public release. If you have suggestions for topics the guides should cover, they are welcome once
-            the repository is public.
+            The source of this website, the guides, the starter kit, the worked example, and the experiment is
+            public in the{" "}
+            <a
+              href={site.repository}
+              className="font-medium text-accent-700 underline decoration-accent-600/40 underline-offset-2 hover:decoration-accent-700"
+            >
+              ResearchCode repository on GitHub
+            </a>
+            , including the experiment&apos;s protocol, research log, and final report. A license for reusing the
+            code and written content has not been chosen yet. Suggestions for topics the guides should cover are
+            welcome as GitHub issues.
           </p>
         }
       >
-        <div className="mt-8">
+        <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2">
           <Link href="/guides" className="text-sm font-medium text-accent-700 hover:text-accent-800">
             Start with the guides <span aria-hidden="true">→</span>
+          </Link>
+          <Link href="/evaluation" className="text-sm font-medium text-accent-700 hover:text-accent-800">
+            See the evaluation results <span aria-hidden="true">→</span>
           </Link>
         </div>
       </Section>
