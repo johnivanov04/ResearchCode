@@ -50,7 +50,8 @@ npm run build
 
 ## Starter kit conventions (`scientific-starter/`)
 - Keep it self-contained: no references to files outside the folder, no runtime dependencies
-  unless clearly necessary, no license until the owner chooses one.
+  unless clearly necessary. The root MIT `LICENSE` covers it; do not add a license file inside
+  `scientific-starter/` while it is frozen (it would change the Condition B treatment and the freeze).
 - `web/src/content/starter-kit.ts` describes it on the website; tests check that its paths exist
   and its commands appear in `scientific-starter/README.md`. Update both together.
 - Verify from `scientific-starter/` before finishing any change:

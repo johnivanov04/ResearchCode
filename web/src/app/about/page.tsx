@@ -121,9 +121,8 @@ export default function AboutPage() {
             >
               ResearchCode repository on GitHub
             </a>
-            , including the experiment&apos;s protocol, research log, and final report. A license for reusing the
-            code and written content has not been chosen yet. Suggestions for topics the guides should cover are
-            welcome as GitHub issues.
+            , including the experiment&apos;s protocol, research log, and final report. It is released under the MIT
+            License. Suggestions for topics the guides should cover are welcome as GitHub issues.
           </p>
         }
       >

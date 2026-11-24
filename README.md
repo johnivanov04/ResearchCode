@@ -176,4 +176,13 @@ metadata. See the "Git attribution" section of `CLAUDE.md`.
 
 ## License
 
-To be confirmed before public release.
+ResearchCode is released under the [MIT License](LICENSE), copyright (c) 2026 John Ivanov. It
+covers the whole repository: code, guides, documentation, the starter kit, and the experiment.
+`growth-analysis/` carries its own copy of the license because it is meant to be copied out of
+the repository.
+
+`scientific-starter/` has no copy of its own: it is frozen experiment material (the Condition B
+treatment, hashed in `experiments/FREEZE.json`), so adding a file to it would change the frozen
+treatment. For the same reason its README still says that ResearchCode has not chosen a license;
+that sentence predates this decision, and the root license applies. If you copy the starter kit
+into your own project, copy `LICENSE` with it.

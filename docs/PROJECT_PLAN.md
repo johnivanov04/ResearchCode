@@ -255,6 +255,7 @@ Phase 4 acceptance criteria for the framework, met before any trial:
 ## 6. Open questions for later phases
 
 - Whether to add human participants to the AI-agent experiment (it would need IRB review first).
-- Licensing: code under MIT is assumed for the template; content license (e.g.
-  CC BY 4.0) to be confirmed with the course instructor.
+- Licensing: decided. The repository is released under the MIT License (root `LICENSE`), which
+  also covers the written content; `growth-analysis/` has its own copy. The frozen
+  `scientific-starter/README.md` still says no license has been chosen (see the root README).
 - Hosting domain and repository visibility.
