@@ -1,13 +1,17 @@
 # Experiment results
 
 These folders hold the data of the Phase 4 experiment, written only by `rc-exp collect`,
-`rc-exp evaluate`, and `rc-exp batch`, never by hand. Data collection is in progress (protocol
-1.5); no results are published until it and the pre-registered analysis are complete.
+`rc-exp evaluate`, and `rc-exp batch`, never by hand. Data collection and the pre-registered
+analysis are complete. The trial records, invalid attempts, and analysis output in these folders
+are **kept private** and are not in the public repository: a deviation from the protocol's
+publication plan (sections 6 and 10), decided after unblinding and recorded in
+`../docs/RESEARCH_LOG.md`. The aggregate results are public in `../docs/aggregate-results.json`
+and `../docs/FINAL_REPORT.md`.
 
 | Folder | Contents |
 | --- | --- |
 | `genuine/` | Confirmatory trials (`<task>--<condition>--rNN/`), analysed as pre-registered |
-| `pilot/` | Pilot trials (`pNN`); published, but never part of the confirmatory analysis |
+| `pilot/` | Pilot trials (`pNN`); never part of the confirmatory analysis. The protocol said they would be published separately; they are kept private |
 | `engineering/` | Engineering validation runs (`eNN`, protocol 1.5): tests of the harness, outside the schedule, never analysed with pilot or confirmatory data |
 | `analysis/<kind>/` | Output of `rc-exp analyze` (report, tables, figures) |
 | `schedule.json` | The randomised run order, generated from the seed in `experiment.json` |

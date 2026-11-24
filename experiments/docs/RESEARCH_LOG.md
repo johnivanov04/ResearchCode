@@ -2,7 +2,8 @@
 
 ResearchCode studies how people build scientific software with AI assistants, so this log
 records how this phase itself was built. **Everything here is qualitative process evidence.
-It is not a result of the controlled experiment, which has not been run.**
+It is not a result of the controlled experiment. The experiment's outcomes are reported only by
+the pre-registered analysis (protocol section 11).**
 
 ## Who did what
 
@@ -318,14 +319,473 @@ caches removed. All 171 results files were then verified byte for byte against t
 manifest. Their evaluations had been made before the change and were not affected. Ruff now
 excludes `results/`.
 
-**What is still unverified.** No session with a real token has run in non-interactive mode.
-The first engineering validation run is the test. The exact `rate_limit_event` values for a Pro
-account with extra usage off, and the `terminal_reason` of a real completed session, will be
-seen for the first time there. The batch stops on anything unexpected.
+**What was still unverified at the time.** No session with a real token had run in
+non-interactive mode. The exact `rate_limit_event` values for a Pro account with extra usage off,
+and the `terminal_reason` of a real completed session, had not been seen. The engineering
+validation run of 2026-11-16 (next section) settled both.
+
+## Data collection (2026-11-16 to 2026-11-21, protocol 1.5)
+
+This section records how the trials were run and the infrastructure incidents during
+collection. **None of it is an experimental outcome.** No result, score, or comparison between
+the conditions appears here. Times are UTC, taken from the batch journal
+(`~/researchcode-trials/batch-log.jsonl`), the trial records, and the macOS power log.
+
+**Who did what.** The project owner started every batch and carried out every recovery step
+(`rc-exp set-validity`, `rc-exp collect`, moving attempts aside). Claude Code investigated each
+stop read-only, proposed the steps from `docs/RUNNING_TRIALS.md`, and audited the data after
+collection. It started no session and changed no record.
+
+**Engineering validation run: `calibration--A--e01` (2026-11-16).** It ran from 23:35:37 to
+23:37:25 (108.2 s) as one unattended session, outside the schedule. Results:
+
+- **Session:** completed, exit code 0, `is_error` false, `terminal_reason` `completed`.
+- **Authentication:** `apiKeySource` was `none`, so the subscription token was used and no API key.
+- **Usage:** three `rate_limit_event` messages, all `allowed`, with `overageStatus` `rejected`
+  and `isUsingOverage` false.
+- **Collection and evaluation:** it was collected into `results/engineering/` and evaluated by
+  the genuine evaluator under freeze `f09fbb4872529faa`, without an evaluation error.
+
+This confirmed the two values the batch relies on: the `terminal_reason` of a completed session,
+and the overage status when extra usage is off. As an engineering run, it is in no analysis, and
+it did not change the schedule.
+
+**Batches.** Eleven batches ran the confirmatory trials in schedule order:
+
+| Batch | Start – end | Schedule positions | Sessions started | How it ended |
+| --- | --- | --- | --- | --- |
+| `…67c5b1` | 2026-11-18 23:01 – 23:10 | 8 | 1 | completed |
+| `…83447a` | 2026-11-19 00:52 – 01:38 | 9–18 | 10 | completed |
+| `…e6aeca` | 2026-11-19 05:32 – 06:47 | 19–28 | 10 | completed |
+| `…3caead` | 2026-11-19 07:15 – 07:58 | 29–33 | 5 | stopped: usage limit (incident 1) |
+| `…4757b8` | 2026-11-19 19:27 – 19:49 | 33–36 | 4 | completed |
+| `…ce1bb7` | 2026-11-19 21:01 – 21:32 | 37–42 | 6 | completed |
+| `…fadb72` | 2026-11-19 21:57 – 22:21 | 43–46 | 4 | completed |
+| `…abff9b` | 2026-11-20 00:48 – 01:35 | 47–56 | 10 | completed |
+| `…7aea12` | 2026-11-20 01:53 – 14:16 | 57–59 | 3 | stopped: needs review (incident 2) |
+| `…fdf646` | 2026-11-21 01:44 – 01:57 | 59–60 | 2 | completed |
+| `…c26869` | 2026-11-21 02:01 – 02:49 | 61–66 | 6 | completed |
+
+The pilot (positions 1–6) and position 7 (`serial-dilution--B--r01`) had already been run by hand
+under protocol 1.4, from 2026-11-15 to 2026-11-16 (previous section).
+
+**Incident 1: usage limit during `serial-dilution--B--r05` (2026-11-19).**
+
+- **What happened.** Attempt 1 started at 07:32:35 (schedule position 33). The rate-limit status
+  had been `allowed_warning` since the session's first event. At 07:36:20 the laptop went into
+  clamshell sleep on battery, and the session paused.
+- **The stop.** At 07:58:16 a brief system wake let the pending request through. It returned
+  HTTP 429, "You've hit your 5-hour limit · resets 10:30am (UTC)". The batch stopped the
+  container at once and recorded the trial as invalid (`stop_category` `usage_limit`). It was
+  not collected or evaluated.
+- **No paid usage.** `overageStatus` was `rejected` and `isUsingOverage` false throughout.
+- **Rule.** Protocol section 10: a session interrupted by the usage limit, or stopped by
+  `rc-exp batch` for it, is invalid. It is rerun under the same identifier, at most twice.
+- **Recovery.** The attempt was collected without evaluation at 19:25:12 and kept as
+  `invalid-attempts/serial-dilution--B--r05-attempt1`, both in `results/genuine/` and in the
+  trials folder.
+- **Attempt 2.** It started at 19:27:48, after the limit had reset, from a new workspace and a
+  new Claude configuration. It completed normally (exit code 0) and is valid.
+- **Context.** Between 05:32 and 07:58 that morning, 14 sessions completed before this one
+  reached the limit. This log has no record of any other use of the subscription in that period.
+
+**Incident 2: the laptop slept overnight with its lid closed on battery (2026-11-20).** The
+macOS power log shows clamshell sleep from 02:09:56 on 2026-11-20 (on battery) until the lid was
+opened at 17:23:06. In between, the machine woke only briefly ("dark wakes"). A `caffeinate`
+process was running, but it cannot keep a Mac awake with the lid closed on battery. Three
+things were affected:
+
+- **`enzyme-kinetics--B--r09` (position 57).** Its session ended normally at 02:09:47, before
+  the sleep. Collection and evaluation then ran during the sleep.
+- **`serial-dilution--B--r09` (position 58).** The session ran from 04:09:34 to 07:23:00 almost
+  entirely in dark wakes: 674.1 s of measured time in 3 h 13 min of real time.
+  - Claude Code retried 9 requests after connection errors. All recovered, and no API error
+    ended the session.
+  - It completed normally: exit code 0, `terminal_reason` `completed`, no continuation message.
+  - It is **valid** under protocol section 10, which excludes trials only for infrastructure
+    failures that end or invalidate a session. It was not excluded.
+- **Both evaluations.** Both were evaluated in the Docker sandbox with no evaluation error, no
+  sandbox error, no missing case observation, and no time limit reached.
+- **`calibration--A--r09` (position 59), attempt 1.** It started at 07:45:36, during a dark wake.
+  - After three turns (two `Bash` calls), its next request never completed. Claude Code retried
+    10 times, then ended at 14:16:45 with "API Error: Connection dropped (ECONNRESET)", exit
+    code 1, `terminal_reason` `api_error`.
+  - The proxy container had been running continuously. The connections were lost because the
+    host was asleep.
+  - Under section 10, an unattended session whose end is uncertain is marked for review, so the
+    batch recorded `needs_review` and stopped without collecting it.
+  - **Decision.** The project owner reviewed the logs and recorded the attempt as **invalid**:
+    "API connection errors (ECONNRESET) ended the session after 10 retries while the host was in
+    clamshell sleep on battery; infrastructure failure (protocol section 10); logs reviewed".
+    The decision was made before any evaluation, and none exists for this attempt.
+  - **Recovery.** The attempt was collected without evaluation at 01:43:39 on 2026-11-21 and
+    kept as `invalid-attempts/calibration--A--r09-attempt1`.
+  - **Attempt 2.** It started at 01:44:36 from a new workspace and configuration, completed
+    normally (exit code 0), and is valid.
+
+Neither incident needed a protocol amendment. Both were handled under the rules in sections 10
+and 13 as frozen in version 1.5.
+
+**Other infrastructure observations.**
+
+- **Sessions near the usage limit.** Three valid trials (`calibration--A--r05`,
+  `calibration--B--r05`, `calibration--B--r07`) completed normally while the rate-limit status
+  was `allowed_warning`. The protocol does not exclude them. Section 12 already lists "sessions
+  near a limit could behave differently" as a threat.
+- **Container clock.** During incident 2, the clock inside the agent container ran about
+  6.5 minutes behind the host. This affects only the timestamps inside that attempt's session
+  log. The harness measures durations on the host.
+
+**State at the end of collection (2026-11-21).**
+
+- **Confirmatory trials:** 60 of 60 valid. Each of the six task × condition cells has exactly
+  `r01` to `r10` (30 trials per condition), collected and evaluated, in the seeded schedule
+  order (seed 20261111).
+  - 59 ran unattended under protocol 1.5 and were evaluated with freeze `f09fbb4872529faa`.
+  - `serial-dilution--B--r01` ran by hand under protocol 1.4 and was evaluated with freeze
+    `b910a7b7afd0a1fd`. It stays in the primary analysis, and the exploratory analysis
+    without it is reported separately (protocol 1.5 amendment).
+- **Pilot:** 6 of 6 valid, all under protocol 1.4 (freeze `b910a7b7afd0a1fd`). They are kept in
+  `results/pilot/`, apart from the confirmatory data, and are analysed only descriptively.
+- **Invalid attempts:** two, each attempt 1, each archived in both places and never evaluated.
+  The analysis does not read them. No trial needed a second rerun.
+- **Freeze:** `rc-exp freeze --check` reports that the public and private files match
+  `FREEZE.json` (`f09fbb4872529faa`). The version 1.4 record is kept in `freeze-history/`.
+- **Audit:** the outcome-blind audit after collection checked the following against the frozen
+  configuration, and found no failure:
+  - **Trial records:** schedule, cells, model, effort, Claude Code version, permission mode,
+    authentication source, tools, prompts, and initial workspaces;
+  - **Evaluation records:** evaluator, sandbox image, case sets, required fields, and
+    infrastructure markers.
+
+**Outcome values seen during collection.** The batch journal records each evaluated trial's
+hidden pass rate, so anyone who reads it sees outcome values.
+
+- **Positions 8–32.** While investigating incident 1, Claude Code printed the journal and saw the
+  values for these trials, which had been evaluated by then. They were not analysed, compared
+  between conditions, or reported.
+- **The engineering run.** Its value was given to the project owner in the run's verification
+  report.
+- **Everything else.** No other outcome values were viewed during the investigations or the
+  audit. No validity decision depended on a score: neither invalid attempt was evaluated, and
+  every other trial's validity was set automatically from its session.
+
+## Analysis, review packets, and the omitted maintainability review (2026-11-22)
+
+This entry was written before the project owner or Claude Code had looked at any comparative
+outcome of the analysis. Times are UTC.
+
+**Pre-analysis backup.** `~/researchcode-backups/2026-11-22T051228Z-before-analysis/` holds:
+
+- the collected results and the trial folders, without virtual environments or caches;
+- the public repository's full Git history, with its working tree and the uncommitted log;
+- the private evaluator, kept apart.
+
+All 3,705 files verified against SHA-256 manifests, and a restore of the repository was tested.
+
+**The pre-registered analysis.** It ran at 05:53:34 with the unchanged command
+`uv run rc-exp analyze --kind genuine`, and finished with exit code 0.
+
+- **Before and after the run:** `rc-exp freeze --check --require-private` matched `f09fbb4872529faa`.
+- **What it analysed:** 60 trials found, 60 analysed, 0 excluded. That is exactly the 60
+  scheduled confirmatory trials, including the two reruns at attempt 2. No pilot, engineering
+  run, or archived invalid attempt was read.
+- **Raw data:** the 1,584 existing results files still matched the backup manifest afterwards.
+- **Output:** five files in `experiments/results/analysis/genuine/`: `analysis.json`, `report.md`,
+  and three figures.
+- **Verification.** 50 outcome-blind checks passed. They printed only pass or fail:
+  - the primary difference and the per-task differences were recomputed independently;
+  - the bootstrap intervals and the permutation p-value were reproduced with the frozen
+    functions and settings (10,000 resamples, 10,000 permutations, seed 20261112, 95%,
+    α = 0.05);
+  - the output contains one p-value only;
+  - the category-balanced sensitivity analysis and the labelled protocol 1.5 exploratory
+    analysis (59 trials, without `serial-dilution--B--r01`, no test) were reproduced.
+
+  The intervals and p-value were reproduced with the same frozen code. This confirms the
+  settings and determinism; it is not an independent implementation.
+- **Discrepancy between protocol and implementation.** For secondary metrics, protocol
+  section 11 calls for "medians and means with bootstrap CIs per condition and task". The frozen
+  implementation reports means and medians per condition and task, but its bootstrap intervals
+  are for the B − A difference, not for each condition's mean or median. The implementation was
+  frozen and was not changed; reports should state the difference.
+
+**Blinded review packets.** They were made at 05:57:09 with the unchanged command
+`uv run rc-exp review-packets`. The packets are in `~/researchcode-review/packets/` and the key
+in `~/researchcode-review-key/blinding-key.json`. Both are outside the repository and readable
+only by the owner (mode 700 or 600).
+
+- **Contents:** 60 packets, 20 per task, each named `<random 8-hex code>-<task>` and holding
+  only the task's implementation module. Every trial had a module. The codes are unique and
+  match the key, which covers each confirmatory trial once. The key was checked by script
+  only; its mapping was never printed or read.
+- **No explicit identifiers.** No packet contains a trial ID, condition label, experiment
+  wording, file path, starter-kit package name, reference to `AGENTS.md` or `CLAUDE.md`, or
+  generator comment.
+- **Metadata leak, corrected.** `blind.py` copies a package-shaped module with
+  `shutil.copytree`. That copy keeps the original modification times (spread over about 3.3
+  days) and mode 644, while single-file modules got the generation time and mode 600. With the
+  public schedule and batch times, those timestamps could have linked 18 packets to their
+  trials. Every packet file and folder was set to one timestamp, with modes 600 and 700. All
+  100 files had identical SHA-256 hashes before and after. The frozen code was not changed;
+  the defect remains in `blind.py`.
+- **Style can still reveal the condition**, as protocol sections 5.3 and 12 expect. Counted
+  across all packets, without linking any packet to a condition:
+  - 30 of 60 refer to spec or docs files;
+  - 18 are packages and 4 include `py.typed`.
+
+**Post-analysis backup.** `~/researchcode-backups/2026-11-22T055832Z-post-analysis/` holds the
+five analysis files, verified against a SHA-256 manifest (manifest hash `a6b74dab71c47845…`).
+The pre-analysis backup was not changed.
+
+**Decision: the maintainability review is not conducted (2026-11-22).**
+
+- **Why.** Because of time and resource constraints, the project owner decided not to conduct
+  the blinded human maintainability review (protocol section 5.3). The project owner states that
+  the decision was made before they viewed the comparative results.
+- **No scores.** No human or AI reviewer scored any submission. No AI scoring replaces the
+  human review.
+- **What is kept.** The review packets and the blinding key are kept unchanged and unused,
+  together with the frozen rubric and protocol.
+- **What this means.** Maintainability, as defined by the rubric, is **unmeasured**. Omitting it
+  is a **deviation from the pre-registered protocol**, in which the review was a subjective
+  secondary metric.
+- **How it is recorded.** The deviation is recorded here, not as an amendment in protocol
+  section 13: the protocol, `experiment.json`, and the rubric are frozen and stay unchanged.
+  Any report of the experiment must state the deviation.
+- **What is not affected.** The review was never part of the primary estimand, the hypothesis
+  test, or the objective metrics. The completed objective analysis is unchanged.
+
+## Measurement diagnostics after unblinding (2026-11-22)
+
+Both problems below were found **after** the pre-registered analysis had run and **after** its
+results had been unblinded, while the outcomes were being read. They are post-analysis
+measurement diagnostics, not pre-registered changes.
+
+- **Unchanged:** the statistical output, the scores, the evaluation records, the data, the
+  protocol, and the freeze record (`f09fbb4872529faa`).
+- **Not done:** no trial was excluded and no analysis was rerun or added.
+
+The figures below were read from the existing `evaluation.json` files.
+
+**1. The security metric counts the wrong rules.**
+
+- **The protocol's definition.** Protocol section 5.2 defines static security findings as Ruff
+  `S` (flake8-bandit) findings.
+- **What the frozen code counts.** `src/rc_experiments/static.py` counts every Ruff code whose
+  identifier starts with `S`:
+
+  ```python
+  security = {code: n for code, n in by_code.items() if code.startswith("S")}
+  ```
+
+  This also matches the `SIM` (flake8-simplify) rules, which the fixed rule set includes.
+- **Effect.** Every finding counted as "security" was a `SIM` code. Condition A had 27 such
+  findings in 12 of 30 trials (SIM105 9, SIM115 8, SIM101 5, SIM102 3, SIM108 1, SIM300 1).
+  Condition B had none.
+- **Under the protocol's definition** (codes `S` followed by digits), **both conditions had zero
+  security findings.**
+- **What the reported −0.90 means.** The reported difference of −0.90 findings (B − A, 95% CI
+  [−1.20, −0.63]) is therefore **not a valid security comparison**. The frozen output is kept as
+  generated. No report may claim that either condition improved security.
+- **What else is affected.** The `SIM` findings are also counted, correctly, in lint density,
+  which counts every rule in the fixed set. That metric is not affected.
+
+**2. Three mutation scores of zero despite large test suites.** In `serial-dilution--B--r01`,
+`serial-dilution--B--r04`, and `serial-dilution--B--r07`:
+
+- **Tests:** the agent wrote 220, 229, and 252 tests. All of them passed against the
+  submission's own code.
+- **Against the reference:** none of them passed against the reference implementation. The
+  frozen evaluator counts only tests that pass against the reference as valid, so each trial
+  had 0 valid tests.
+- **Result:** all 9 mutants were recorded as "no valid task tests", and the mutation score is 0.
+
+`serial-dilution--B--r01` is also the trial that was run interactively. Why these tests fail
+against the reference has not been investigated, and no explanation is assumed here.
+
+The frozen mutation scores stay as reported. Read them with this limitation in mind: for these
+three trials, a score of 0 does not mean that no tests were written. The three zeros are part of
+the reported serial-dilution Condition B mean (0.700) and of the pooled Condition B result.
+
+## POST HOC: why three serial-dilution test suites had no valid tests (2026-11-22)
+
+**This whole section is a post-hoc investigation.** It was carried out after the pre-registered
+analysis and after unblinding, read-only.
+
+- **Unchanged:** the evaluator, the protocol, the frozen analysis, the data, and the scores. In
+  particular, the three mutation scores of 0 and the reported primary and secondary analyses
+  are kept exactly as generated.
+- **Not done:** no analysis was rerun, no hypothesis test was added, and no trial was excluded.
+- **How hidden material was handled:** the reference implementation was checked by script for
+  which top-level names it defines; no reference code is reproduced here.
+
+**How the evaluator decides that a test is valid (confirmed from the frozen code).**
+`test_quality.py` and `sandbox_scripts/suite_runner.py` work as follows:
+
+- **The run:** they copy the submission, overwrite its module with the reference implementation,
+  and run the submission's **entire** pytest suite in one session in the sandbox.
+- **The rule:** a test is valid only if its test ID is reported as `passed` in that run.
+- **What is kept:** the evaluation record stores only the count (`valid_tests`). It does not keep
+  per-test outcomes or pytest's output.
+- **The missing option:** the runner does not pass `--continue-on-collection-errors`.
+
+**Confirmed from the files and records.** In `serial-dilution--B--r01`, `r04`, and `r07`:
+
+- **Own tests:** all 220, 229, and 252 collected tests passed against the submission's own code.
+- **Against the reference:** 0 tests were valid, so all 9 mutants were recorded as "no valid task
+  tests" and the mutation score is 0.
+- **The extra import.** Each main test file (`tests/test_serial_dilution.py`) imports, at module
+  level, a custom exception class from the submission: `InputTypeError` in r01 and
+  `InvalidTypeError` in r04 and r07.
+  - The submission defines the class as a subclass of both `TypeError` and `ValueError`, which
+    satisfies the task statement's requirement to raise `ValueError` or `TypeError`.
+  - The task statement does not name such a class, and the reference does not define it.
+  - Each main file refers to the class in two places besides the import.
+- **The second test file.** The property-test file (`tests/test_serial_dilution_properties.py`,
+  14 to 17 test functions) does not import the class.
+- **No other difference.** The module layout (one file, `src/serial_dilution.py`) and the pytest
+  configuration are the same as in the seven serial-dilution Condition B trials that scored 1.0.
+  Those trials import only the five functions the task statement names.
+
+**Strongly supported mechanism, not directly observed.**
+
+- **The chain:** with the reference in place, the import of the custom class cannot be resolved.
+  pytest therefore cannot load the main test file, and by default it then stops the whole
+  session ("Interrupted: 1 error during collection") before any test runs. That includes the
+  tests in the independent property-test file.
+- **The evidence:**
+  - static inspection of the test files;
+  - a check that the reference defines no such name and no module-level `__getattr__`;
+  - a synthetic two-file reproduction in the sandbox image (pytest 9.2.0), which used no
+    submission or reference code. In it, one file's unresolved import stopped the session, no
+    test ran, and the JUnit report held only the error entry.
+- **The limit of the evidence:** the original reference-run output was not kept, and the three
+  suites were **not** rerun against the reference. The original errors were therefore not
+  observed directly, although the stored record (`reference_status` `ran`, `valid_tests` 0) is
+  consistent with the mechanism.
+- **The pre-registered option ruled out:** the reference contains no doctest examples, so
+  doctests taken from the substituted reference module cannot have added valid tests.
+
+**What the zeros mean.** The three scores of 0 cannot establish that these tests were
+ineffective. How much of each suite would have been compatible with the reference, and how many
+defects it would have detected, remain **unknown**.
+
+**Scenario bound (post hoc; not a corrected estimate and not a confidence interval).**
+
+- **The assumption:** each of the three trials scored 1.0 instead of 0. Only this scenario was
+  computed.
+- **The effect:** the serial-dilution Condition B mean would rise from 0.700 to 1.000. The
+  serial-dilution difference would rise from +0.578 to +0.878.
+- **Overall:** the pooled mean-over-tasks difference (B − A) would rise from **+0.835** to about
+  **+0.935** (0.9354).
+- **The direction:** the failure can only lower Condition B's mutation scores. The pre-registered
+  value of +0.835 is the reported result.
+
+**A related case in another trial.** In `enzyme-kinetics--B--r05`, one test imports
+`enzyme_kinetics.__main__`. That submodule does not exist after the package is replaced by the
+reference.
+
+- The import is **inside the test function**, not at module level, so it can fail only that test,
+  not the collection of the file.
+- The trial had 58 of 62 tests valid and a mutation score of 1.0.
+- No other test or conftest file in the 60 trials (222 scanned) imports a name or submodule of
+  the task module that the reference lacks.
+
+**The fragility of validating tests against a reference.**
+
+- **All-or-nothing per test:** validity depends on every import and every assertion in a test
+  matching the reference implementation.
+- **The whole suite in one run:** a single unresolvable import at module level can invalidate
+  every test in every file. If the problem sits inside one test, it costs only that test.
+- **Exclusions elsewhere:** in the trials that kept valid tests, 48% to 94% of the collected
+  tests were valid. The reasons for the other exclusions were not investigated.
+
+**Coupling to the submission is also a real limitation.**
+
+- Tests that depend on names or behaviour particular to one implementation (here, a custom
+  exception type more specific than the task requires) are less portable. Excluding them is
+  what the reference-based rule is designed to do.
+- This investigation therefore does **not** show that the excluded tests would all have passed
+  against a compatible reference. It shows only that, for these three trials, the measurement
+  stopped before any test could be judged.
+
+## DEVIATION: three publication commitments not fulfilled (decided 2026-11-23, after unblinding)
+
+**This is a deviation from the protocol's publication plan. It was decided after the
+pre-registered analysis had run (2026-11-22) and after the results had been unblinded. It was
+not pre-registered, and it is not an amendment to the experimental methods.**
+
+**The original commitments.** The frozen protocol (the same wording in versions 1.4 and 1.5)
+made three publication commitments:
+
+- **Section 3:** the hashes in `FREEZE.json` let anyone check the evaluator "once the evaluator
+  is released after data collection";
+- **Section 6:** pilot results "are excluded from every analysis and published separately";
+- **Section 10:** for rerun trials, "Every attempt is kept and published".
+
+**The decision.** The project owner decided not to fulfil these three commitments in the
+public release. The decision records no reason beyond that choice. One consideration recorded
+earlier in this log is that per-trial evaluation records list hidden-case identifiers and
+per-case details.
+
+- **Released:** the protocol (version 1.5) with its amendment table, and the superseded 1.4
+  protocol, configuration, and freeze record; the public framework (tasks, prompts, harness
+  including the unattended batch runner, fixture evaluator, and aggregate evaluator
+  validation); this research log; the final report in Markdown and PDF; the aggregate results
+  (`docs/aggregate-results.json`); the three analysis figures; and the website.
+- **Withheld:**
+  - the hidden evaluator: its source, cases, expected values, reference solutions, and mutants;
+  - the full pilot trial results;
+  - the individual confirmatory trial records, submissions, and session logs (transcripts),
+    and the full analysis output with its per-trial rows;
+  - the two archived invalid attempts;
+  - the blinding key, review packets, credentials, and backups.
+
+**What this limits.** Without the withheld material, others cannot:
+
+- check the evaluator against the hashes in `FREEZE.json`;
+- rerun the hidden evaluation of any submission;
+- inspect submissions or session logs;
+- recompute per-trial scores or rerun the analysis;
+- examine the pilot or the invalid attempts.
+
+The results can therefore be audited only through the aggregate output, the three figures,
+the frozen code, and this log. Independent replication and auditing are limited accordingly.
+
+**What does not change.**
+
+- The protocol keeps its original wording, including the three commitments. It is not edited
+  retroactively.
+- The freeze record (`f09fbb4872529faa`), the analysis code, and the analysis output are
+  unchanged.
+- Every recorded outcome is unchanged. No trial was excluded or rescored.
+
+**Trial-level values that are public.** The three figures plot every confirmatory trial's
+hidden pass rate, mutation score, and session time as an unlabelled dot, by task and
+condition. They name no trial. The report also names a few individual values: the three
+serial-dilution Condition B trials with no valid tests, and the enzyme-kinetics trial with 58
+of 62 valid tests.
 
 ## Open items
 
-- Human review of the protocol, tasks, hidden cases, and prompts before the pilot.
-- The pilot (6 trials) is run by the project owner through their Claude Pro subscription, as
-  usage allows. It will show how many sessions fit in the plan's usage limits and check the
-  parts of the harness that cannot be exercised without a model.
+- **Publish the analysis**, including results that do not favour the structured workflow. State
+  that maintainability was not measured (deviation from protocol section 5.3), and state the
+  confidence-interval discrepancy above. State both post-analysis measurement diagnostics:
+  - the "security" metric counts `SIM` rules, and no security difference may be claimed;
+  - the mutation-score limitation for the three serial-dilution Condition B trials, using the
+    post-hoc diagnosis above. The zeros are a measurement failure, not evidence of ineffective
+    tests. The +0.935 scenario is a bound, not an estimate.
+- **For any future version of the evaluator** (a frozen-file change, so it needs a new freeze and
+  an entry in protocol section 13):
+  - judge test validity per file, or with `--continue-on-collection-errors`;
+  - keep the pytest output of the reference run.
+
+  This does not apply to the present results.
+- **Before committing any results:** decided on 2026-11-23. Only aggregate results and the
+  three figures are published; the per-trial records stay private (see the deviation above).
+  The `evaluation.json` files list hidden-case identifiers and per-case details.
+- **After the analysis:** update `experiment.json`'s status and the website. `experiment.json` is
+  frozen, so this needs a new freeze record and an entry in protocol section 13.
+- **Human review:** this log has no record of the human review of the protocol, tasks, hidden
+  cases, and prompts that was listed here before the pilot. Record it if it took place.

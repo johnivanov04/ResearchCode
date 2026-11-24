@@ -39,7 +39,7 @@ experiments/
 │   ├── analysis.py            Pre-registered analysis, tables, figures
 │   └── cli.py                 `rc-exp`
 ├── docker/                    sandbox, agent, and proxy images (base images pinned by digest)
-├── results/                   genuine/ and pilot/ trials (empty until trials run)
+├── results/                   genuine/ and pilot/ trial records (kept private; see below)
 └── tests/                     Tests of the harness itself
 ```
 
@@ -50,8 +50,11 @@ the hidden cases with their expected values, the reference solutions, and the de
 defective variants for the three experiment tasks. It lives in a separate private Git
 repository on the experimenter's machine (default `~/researchcode-private/phase4-evaluator`, or
 the path in `RC_PRIVATE_EVALUATOR`). `FREEZE.json` publishes the SHA-256 hash of each of its
-files, so its integrity can be checked when it is released after data collection. Genuine and
-pilot trials cannot be prepared or evaluated without it.
+files. The protocol (section 3) committed to releasing the evaluator after data collection, so
+that it could be checked against these hashes. After the analysis and unblinding, the project
+owner decided not to release it: a deviation from the publication plan, recorded in
+`docs/RESEARCH_LOG.md` and the final report. Genuine and pilot trials cannot be prepared or
+evaluated without it.
 
 Public CI and dry runs use the **fixture evaluator** (`src/rc_experiments/fixture_evaluator/`).
 These are two clearly labelled practice tasks with their own public cases, references, and
@@ -63,7 +66,7 @@ defects. They test the machinery and never score a genuine trial.
 | --- | --- | --- |
 | Framework validation | The scoring system works: references score 100%, and every deliberate defect is caught. The sandbox and network isolation hold. | `docs/evaluator-validation.json`, the tests, CI |
 | Fixture dry runs | Every stage of the pipeline runs end to end on labelled practice data | Temporary folders only; every table and figure is labelled "FIXTURE DATA - NOT EXPERIMENTAL RESULTS" |
-| Genuine observations | What the experiment found | `results/genuine/` and `results/pilot/`, which are **empty: no trial has been run** |
+| Genuine observations | What the experiment found | Aggregate results in `docs/aggregate-results.json` and `docs/FINAL_REPORT.md`. The per-trial records in `results/` are **kept private** (a publication deviation; see `docs/RESEARCH_LOG.md`) |
 
 ## How a trial is isolated and scored
 

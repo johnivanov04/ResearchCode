@@ -175,7 +175,7 @@ Phase 3 acceptance criteria:
    and is verified against the application's files by tests; all existing website and starter checks
    still pass.
 
-### Phase 4 — Controlled experiment (status: in progress; framework implemented on `feat/phase-4-evaluation`, no trials run)
+### Phase 4 — Controlled experiment (status: data collection and pre-registered analysis complete; report in `experiments/docs/FINAL_REPORT.md`)
 
 Research question: when the same AI coding agent, with the same model, tools, and budget, is
 given the same scientific programming task, does working within ResearchCode's structured
@@ -201,8 +201,10 @@ Phase 4 milestones:
 4. Evaluator validation and an end-to-end fixture dry run (done).
 5. Human review of the protocol and evaluator; freeze confirmed (pending).
 6. Pilot trials: six manual sessions through the Claude Pro subscription (done). Confirmatory trials:
-   the first one manual; the rest unattended with `rc-exp batch` (protocol 1.5, in progress).
-7. Confirmatory trials, analysis, and publication on `/evaluation` (pending).
+   the first one manual; the rest unattended with `rc-exp batch` (protocol 1.5; all 60 done).
+7. Confirmatory trials, analysis, and publication on `/evaluation` (done: analysis run once on
+   2026-11-22; aggregate results on `/evaluation` and in `experiments/docs/aggregate-results.json`;
+   report in `experiments/docs/FINAL_REPORT.md`).
 
 Phase 4 acceptance criteria for the framework, met before any trial:
 1. From `experiments/`: `uv sync --locked`, `uv run pytest` (with the Docker tests),

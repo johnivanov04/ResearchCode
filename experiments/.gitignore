@@ -29,3 +29,12 @@ dry-run*/
 rc_private_evaluator/
 private-evaluator/
 **/hidden/
+
+# Trial records and analysis output are kept private (see docs/RESEARCH_LOG.md, publication
+# deviation). Only the READMEs and schedule.json in results/ are tracked; stage files explicitly.
+results/genuine/*
+!results/genuine/README.md
+results/pilot/*
+!results/pilot/README.md
+results/engineering/
+results/analysis/

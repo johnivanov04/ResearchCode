@@ -42,9 +42,12 @@ See [docs/PROJECT_PLAN.md](docs/PROJECT_PLAN.md) for architecture, milestones, a
 
 `experiments/` (Phase 4) holds the pre-registered experiment comparing unstructured AI coding with the
 structured ResearchCode workflow: the protocol, three tasks, a hidden evaluator, an isolated harness, and
-the analysis pipeline. Trials are manual Claude Code sessions through a Claude Pro subscription, with no
-additional spending. **No trials have been run, so there are no results.** See
-[experiments/README.md](experiments/README.md) and [experiments/docs/PROTOCOL.md](experiments/docs/PROTOCOL.md).
+the analysis pipeline. Trials ran as Claude Code sessions through a Claude Pro subscription, with no
+additional spending: the pilot and the first confirmatory trial by hand, the other 59 unattended
+(protocol 1.5). **All 60 confirmatory trials and the pre-registered analysis are complete.** Both
+conditions passed every hidden evaluation case, a ceiling rather than evidence of equivalence. See the
+[final report](experiments/docs/FINAL_REPORT.md), [experiments/README.md](experiments/README.md), and
+[experiments/docs/PROTOCOL.md](experiments/docs/PROTOCOL.md).
 GitHub Actions (`.github/workflows/experiments.yml`) tests the harness and validates the evaluator; it never
 runs an AI agent.
 
