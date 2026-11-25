@@ -1,7 +1,7 @@
 # Structured versus Unstructured AI-Assisted Scientific Programming: A Pre-registered Controlled Experiment with an AI Coding Agent
 
-**John Ivanov**
-Caltech CS/EE 143 special project (ResearchCode), November 2026
+**John Ivanov, Bryan Kim, Riley Coover, Yurii Ilnytskyi**
+California Institute of Technology — CS/EE 143 Special Project (ResearchCode), November 2026
 
 ---
 
@@ -52,8 +52,9 @@ These practices cost time, and with an AI assistant they also cost interaction a
 
 ### 1.2 ResearchCode
 
-ResearchCode is an open-source educational project, developed as a Caltech CS/EE 143 special
-project, on using AI coding assistants responsibly in research. It consists of four parts:
+ResearchCode is an open-source educational project on using AI coding assistants responsibly
+in research. It is a Caltech CS/EE 143 special project assigned to a four-person student team
+(Section 11). It consists of four parts:
 
 - a website with guides;
 - a scientific Python starter kit (uv, pytest, Hypothesis, Ruff, continuous integration,
@@ -777,7 +778,7 @@ robust.
   replication and auditing (Section 8). It changes no method, analysis, or result.
 ---
 
-## 11. AI Assistance Statement
+## 11. Project Team and AI Assistance
 
 As the project's own research log records, Claude Code (the same model family that was
 evaluated) wrote:
@@ -790,6 +791,17 @@ evaluated) wrote:
 The project owner set the research question and constraints, approved each protocol change,
 started every data-collection batch, and made every validity decision that required judgement.
 The protocol lists the shared model family as a threat to validity.
+
+**Authors and contributions.** ResearchCode is a Caltech CS/EE 143 special project of a
+four-person team: John Ivanov, Bryan Kim, Riley Coover, and Yurii Ilnytskyi. All four are
+coauthors of this report. The author order does not indicate equal contributions.
+
+John Ivanov is the project owner and the experiment operator, as the research log documents.
+In this report and in the research log, "the project owner" refers to John Ivanov. The project
+owner made the decisions attributed to "the project owner" here: the protocol changes, the
+validity decisions, the omitted maintainability review, and the publication deviation. As
+operator, the project owner started and ended the interactive sessions and started every
+unattended batch. This report does not itemise the other coauthors' individual contributions.
 
 ---
 

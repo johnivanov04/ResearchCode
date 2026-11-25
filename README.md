@@ -7,8 +7,8 @@ with limited software engineering experience use AI coding assistants (Claude Co
 GitHub Copilot, and others) to build research software that is correct, secure, maintainable, and
 reproducible.
 
-It is being developed as a Caltech CS/EE 143 special project. It is not an official Caltech
-publication or service.
+It is being developed as a Caltech CS/EE 143 special project, assigned to a four-person student
+team: John Ivanov, Bryan Kim, Riley Coover, and Yurii Ilnytskyi. It is not an official Caltech publication or service.
 
 ## Project status
 
