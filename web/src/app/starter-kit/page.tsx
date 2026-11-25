@@ -45,7 +45,7 @@ const notIncluded = [
   "Growth-curve fitting over many readings, phase detection, or replicate handling. The starter's example covers two readings only; the full analysis is a separate application built from the starter (see below).",
   "A separate GitHub template repository or a published package. You copy a folder, as described above.",
   "Testing on Windows or macOS in CI. The workflow runs on Ubuntu with Python 3.12 and 3.13.",
-  "A license. ResearchCode has not chosen one yet.",
+  "A license file inside the folder. ResearchCode, including the starter kit, is released under the MIT License; when you copy the starter, copy the repository's LICENSE file with it.",
 ];
 
 const inlineLink = "font-medium text-accent-700 underline underline-offset-2 hover:text-accent-800";

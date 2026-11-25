@@ -35,7 +35,9 @@ def test_permutation_test_separates_clear_and_null_differences():
     assert permutation_p(cell_values([0.5, 0.6, 0.7] * 2, [0.5, 0.6, 0.7] * 2), 2000, 1) > 0.5
 
 
-def write_trial(root, trial_id, task, condition, pass_rate, *, kind="fixture", validity="valid", freeze=True):
+def write_trial(
+    root, trial_id, task, condition, pass_rate, *, kind="fixture", validity="valid", freeze=True, mode="manual-session"
+):
     trial_dir = root / trial_id
     trial_dir.mkdir(parents=True)
     record = {
@@ -46,7 +48,7 @@ def write_trial(root, trial_id, task, condition, pass_rate, *, kind="fixture", v
         "data_kind": kind,
         "validity": validity,
         "validity_reason": "test",
-        "agent": {"wall_clock_seconds": 600.0, "num_turns": None, "total_cost_usd_reported": None},
+        "agent": {"mode": mode, "wall_clock_seconds": 600.0, "num_turns": None, "total_cost_usd_reported": None},
     }
     evaluation = {
         "freeze": {"matches": freeze},
@@ -150,3 +152,49 @@ def test_reduced_samples_report_planned_against_achieved(tmp_path, config):
     report = (tmp_path / "out" / "report.md").read_text()
     assert "## Sample size: planned and achieved" in report
     assert "do not establish whether" in report
+
+
+def test_mixed_execution_modes_add_a_labelled_exploratory_analysis(tmp_path, config):
+    """Protocol 1.5: the primary result keeps every valid trial; the exploratory one drops interactive ones."""
+    root = tmp_path / "results"
+    for task in config.task_ids:
+        for condition, rate in (("A", 0.6), ("B", 0.8)):
+            for r in (1, 2):
+                write_trial(
+                    root,
+                    f"{task}--{condition}--r{r:02d}",
+                    task,
+                    condition,
+                    rate,
+                    kind="genuine",
+                    mode="unattended-batch",
+                )
+    write_trial(root, "serial-dilution--B--r09", "serial-dilution", "B", 0.0, kind="genuine", mode="manual-session")
+    result = analyse(root, tmp_path / "out", config)
+    assert result["trials_included"] == 13  # the interactive trial stays in the primary analysis
+    assert {r["execution_mode"] for r in result["rows"]} == {"manual-interactive", "unattended-noninteractive"}
+    sensitivity = result["exploratory_execution_mode"]
+    assert sensitivity["excluded_trials"] == ["serial-dilution--B--r09"]
+    assert sensitivity["trials_included"] == 12
+    assert sensitivity["primary"]["difference_B_minus_A"] == pytest.approx(0.2)
+    assert result["primary"]["difference_B_minus_A"] != pytest.approx(0.2)  # the primary result is not replaced
+    assert result["inference"]["permutation_p"] is None or "permutation" not in json.dumps(sensitivity)
+    report = (tmp_path / "out" / "report.md").read_text()
+    assert "## Exploratory: without interactively run trials" in report
+    assert analysis.EXPLORATORY_MODE_LABEL in report
+    assert report.index("## Primary metric") < report.index("## Exploratory")
+
+
+def test_a_single_execution_mode_adds_no_exploratory_analysis(tmp_path, config):
+    populate(tmp_path / "results", config, kind="genuine")
+    result = analyse(tmp_path / "results", tmp_path / "out", config)
+    assert result["exploratory_execution_mode"] is None
+    assert "## Exploratory" not in (tmp_path / "out" / "report.md").read_text()
+
+
+def test_engineering_runs_are_labelled_as_not_experimental_data(tmp_path, config):
+    populate(tmp_path / "results", config, kind="engineering")
+    result = analyse(tmp_path / "results", tmp_path / "out", config)
+    assert result["label"] == analysis.ENGINEERING_LABEL
+    assert result["inference"]["permutation_p"] is None
+    assert result["exploratory_execution_mode"] is None

@@ -4,11 +4,14 @@ Results are stored per data kind, never mixed:
 
     experiments/results/genuine/<trial-id>/   confirmatory trials (committed)
     experiments/results/pilot/<trial-id>/     pilot trials (committed, never analysed with genuine data)
+    experiments/results/engineering/<trial-id>/  engineering validation runs of the harness
+                                              (protocol 1.5; never analysed with pilot or genuine data)
     <any directory outside results/>          fixture trials (dry runs; refused inside results/)
 
 Each trial directory holds ``trial.json``, ``prompt.txt``, ``session-logs/`` (Claude Code's own
 session logs, if any), ``submission/`` (the workspace as the agent left it, minus caches and
-virtual environments), and ``evaluation.json``.
+virtual environments), and ``evaluation.json``. Trials run by ``rc-exp batch`` (protocol 1.5)
+also keep ``agent-output/``: Claude Code's streamed output and error output, redacted.
 """
 
 from __future__ import annotations
@@ -30,6 +33,8 @@ from rc_experiments.trials import now_utc, read_json, update_record, write_json
 MAX_SUBMISSION_BYTES = 20_000_000
 MAX_SUBMISSION_FILES = 5_000
 SKIP_NAMES = static.SKIP_DIRS | {".uv-cache", ".cache", ".mypy_cache", ".DS_Store"}
+# Written next to the workspace by rc-exp batch: Claude Code's streamed output and its error output.
+AGENT_OUTPUT_FILES = ("agent-stream.jsonl", "agent-stderr.txt")
 
 
 class CollectionError(RuntimeError):
@@ -58,7 +63,7 @@ def results_dir_for(kind: str, fixture_root: Path | None = None) -> Path:
         if fixture_root.resolve().is_relative_to(RESULTS_DIR.resolve()):
             raise ValueError("fixture results may never be written inside experiments/results")
         return fixture_root
-    if kind not in ("genuine", "pilot"):
+    if kind not in ("genuine", "pilot", "engineering"):
         raise ValueError(f"unknown data kind {kind!r}")
     return RESULTS_DIR / kind
 
@@ -110,6 +115,13 @@ def collect(trial_dir: Path, results_root: Path) -> Path:
             (destination / "session-logs" / f"{index:02d}-{log.name}").write_text(
                 redact_secrets(text), encoding="utf-8"
             )
+    # rc-exp batch (protocol 1.5) also keeps Claude Code's streamed output; it is redacted again here.
+    for name in AGENT_OUTPUT_FILES:
+        source = trial_dir / name
+        if source.is_file() and not source.is_symlink():
+            (destination / "agent-output").mkdir(exist_ok=True)
+            text = source.read_text(encoding="utf-8", errors="replace")
+            (destination / "agent-output" / name).write_text(redact_secrets(text), encoding="utf-8")
     record["collected_at"] = now_utc()
     record["submission"] = {"files": budget["files"], "bytes": budget["bytes"], "skipped": skipped}
     write_json(destination / "trial.json", record)

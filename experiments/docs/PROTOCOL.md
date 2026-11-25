@@ -2,9 +2,9 @@
 
 | | |
 | --- | --- |
-| Protocol version | 1.4 |
-| Written | 2026-11-11 (version 1.0); revised 2026-11-12 (versions 1.1 and 1.2) and 2026-11-14 (versions 1.3 and 1.4), before any trial was run |
-| Status | Framework implemented; no trials run; the pilot is run manually through a Claude Pro subscription |
+| Protocol version | 1.5 |
+| Written | 2026-11-11 (version 1.0); revised 2026-11-12 (versions 1.1 and 1.2) and 2026-11-14 (versions 1.3 and 1.4), before any trial was run; amended 2026-11-16 (version 1.5), after the pilot and the first confirmatory trial (section 13) |
+| Status | Data collection in progress. The pilot (6 trials) and 1 confirmatory trial were run as manual, interactive sessions (version 1.4); the remaining trials run unattended with `rc-exp batch` (version 1.5) |
 | Additional spending | **$0.** Trials use the experimenter's existing Claude Pro subscription; no API usage, credits, or other paid services |
 | Machine-readable configuration | [`experiments/experiment.json`](../experiment.json) |
 | Freeze record | [`experiments/FREEZE.json`](../FREEZE.json) (SHA-256 of every file that defines the experiment) |
@@ -54,10 +54,13 @@ favour ResearchCode.
 
 Both conditions use the same agent, model, configuration, container image, network
 access, and time limit (section 7). Each trial is a single Claude Code session that starts
-from a new, clean workspace. The session is **started and ended by a human operator** but
-is otherwise unattended (section 7.1): the operator does not guide, correct, or answer the
-agent, apart from one fixed continuation message that is the same in both conditions. The
-only difference between conditions is the treatment below.
+from a new, clean workspace. Under versions 1.1 to 1.4, the session was **started and ended
+by a human operator** but was otherwise unattended (section 7.1): the operator did not guide,
+correct, or answer the agent, apart from one fixed continuation message that is the same in
+both conditions. From version 1.5, the remaining sessions are **fully unattended**: `rc-exp
+batch` starts each one non-interactively, it ends when the agent's turn ends or at the time
+limit, and no message of any kind is sent to the agent. The only difference between
+conditions is the treatment below.
 
 **Condition A: unstructured AI coding.** The workspace contains only the task statement
 (`TASK.md`) and its public examples (`public_examples.json`). The prompt asks the agent to
@@ -213,14 +216,23 @@ from objective metrics and are never combined with them.
 
 Recorded for every trial in its record (`trial.json`) and fixed in `experiment.json`:
 
-- **Tool:** Claude Code 2.1.319 in **interactive mode**, started by `rc-exp session` with
-  the trial prompt as its first message. Claude Code is never run non-interactively, and the
-  harness never starts a model session by itself.
+- **Tool:** Claude Code 2.1.319. Versions 1.1 to 1.4: **interactive mode**, started by
+  `rc-exp session` with the trial prompt as its first message (the six pilot trials and the
+  confirmatory trial `serial-dilution--B--r01`). From version 1.5: **non-interactive mode**
+  (`claude -p` with `--output-format stream-json --verbose`, never `--bare`), started by
+  `rc-exp batch` with the same prompt, container, model, effort, permission mode, tools, and
+  time limit. Every trial's record states its execution mode (`manual-interactive` or
+  `unattended-noninteractive`). The harness starts a session only when the operator runs
+  one of these commands.
 - **Access and billing:** the experimenter's existing **Claude Pro subscription**. The only
   credential passed into the container is `CLAUDE_CODE_OAUTH_TOKEN`, created once with
   `claude setup-token` (which requires a Claude subscription). `ANTHROPIC_API_KEY`,
   `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_BASE_URL`, and the cloud-provider switches are never
-  passed, even if they are set on the host.
+  passed, even if they are set on the host. From version 1.5, `rc-exp batch` refuses to start
+  if any of them (or any other `ANTHROPIC_*`, `CLAUDE_CODE_USE_*`, or `CLAUDE_CODE_API_KEY*`
+  variable) is set, if the token is missing, malformed, or not a token from
+  `claude setup-token`, or if the operator has not confirmed that extra usage is off. There is
+  never a fallback to an API key.
 - **Paid usage beyond the plan:** Anthropic calls it usage credits; Claude Code calls it extra
   usage. It must be turned off at claude.ai, Settings > Usage, before every sitting. Additional
   spending: $0.
@@ -252,7 +264,8 @@ Recorded for every trial in its record (`trial.json`) and fixed in `experiment.j
 
 ### 7.1 The operator's role
 
-The operator follows `docs/RUNNING_TRIALS.md` exactly:
+**Versions 1.1 to 1.4 (manual sessions).** The operator followed `docs/RUNNING_TRIALS.md`
+exactly:
 
 1. Run `rc-exp session <trial-id>`. Claude Code opens with the trial prompt already entered.
 2. Answer only Claude Code's own startup dialogs (trusting `/workspace`, the
@@ -269,6 +282,25 @@ answers four recorded questions:
 - whether anything else was typed;
 - whether a usage limit interrupted the session;
 - whether extra usage was mentioned.
+
+**From version 1.5 (unattended sessions).** The operator checks that extra usage is off and
+runs `rc-exp batch --confirm-extra-usage-off --limit <n>`. The batch runs the next trials one
+at a time in schedule order (section 9), with no operator input and no continuation message.
+It reads Claude Code's streamed output as it arrives and **stops the container at once** if
+Claude Code reports an API key source, paid overage in use or available, the plan's usage
+limit, an authentication, billing, or rate-limit error, any mention of extra usage, or a
+model, permission mode, version, or tool set that differs from this section. The operator's
+four questions are replaced by these automatic checks and by the session log (section 10).
+A session counts as completed only if Claude Code reports a finished turn without error and
+exits normally. After any other ending, after a timeout, and after any collection or
+evaluation error, the batch stops and the operator decides as in section 10. A trial is
+never started twice, and an interrupted batch is never resumed in the middle of a session.
+
+**Engineering validation runs (version 1.5).** To test the unattended harness on a real task,
+the operator may run single trials outside the schedule (`rc-exp batch
+--engineering-validation <task>--<condition>`). They have replicate `eNN`, are stored
+separately (`results/engineering/`), do not change the randomised schedule, and are never part
+of the pilot or confirmatory analysis.
 
 If tool version or model must change during data collection (for example, because the
 model is withdrawn or no longer included in the subscription), collection stops, the change
@@ -291,7 +323,9 @@ plan limits usage over periods that reset (for example, a short rolling window a
 limit). The amounts depend on the model and on how long and how large each session is. They
 are not a fixed number of trials, and they can change. Before each session the operator
 checks the remaining usage with `/usage` in `rc-exp preflight`. A session is started only if
-the operator expects it can finish within the plan's remaining usage. How many trials one
+the operator expects it can finish within the plan's remaining usage. From version 1.5,
+the operator checks the remaining usage before each batch and chooses `--limit` accordingly;
+a session that reaches the usage limit is stopped at once and is invalid. How many trials one
 usage period allows is unknown until the pilot. The pilot records the messages and tokens of
 each session and the number of trials that fitted in each period. The evaluation (Docker
 sandbox) uses no model and has no usage cost.
@@ -321,6 +355,13 @@ behaviour:
   - a disallowed tool used;
   - extra usage reported;
   - more than two continuation messages, or any other operator input.
+- (version 1.5) an unattended session stopped by `rc-exp batch` because Claude Code reported an
+  API key source, paid overage, the usage limit, an authentication or billing error, or a
+  configuration that differs from section 7.
+
+An unattended session whose end is uncertain (no completed result, a non-zero exit, or output
+that cannot be read) is marked for review and decided by the experimenter from its logs.
+Reaching the time limit remains a valid outcome.
 
 An invalid trial is rerun under the same identifier with a new attempt number, at most
 twice. Every attempt is kept and published. The agent's own failures are **valid
@@ -385,10 +426,18 @@ from a new workspace and a new Claude configuration; an interrupted session is n
 - **Usage reporting.** Message and token counts come from Claude Code's own session log.
   They are not independent measurements. Monetary cost is not measured, because no
   additional money is spent.
-- **Manual operation (version 1.1).** A human starts and ends each session. Operator
-  behaviour is fixed by section 7.1 and recorded, but timing, when the session ends, and
-  the use of the continuation message can still vary. The operator cannot be blind to the
-  condition, because the workspace shows it.
+- **Manual operation (versions 1.1 to 1.4).** A human started and ended each session.
+  Operator behaviour was fixed by section 7.1 and recorded, but timing, when the session
+  ended, and the use of the continuation message could vary. The operator could not be blind
+  to the condition, because the workspace shows it. No continuation message was sent in any
+  of these seven trials.
+- **Change of execution mode (version 1.5).** The pilot and the first confirmatory trial
+  (`serial-dilution--B--r01`, Condition B) were run interactively; all later trials run
+  non-interactively. The tool version, model, effort, prompts, container, tools, and time
+  limit are unchanged, but non-interactive sessions cannot receive a continuation message and
+  end when the agent's turn ends. If this changes behaviour, it affects one confirmatory trial
+  in one condition. That trial stays in the primary analysis; an exploratory analysis without
+  it is reported separately (section 13).
 - **Subscription limits (version 1.1).** Usage limits may allow fewer trials than planned,
   which reduces statistical power (section 6). Sessions near a limit could behave
   differently; sessions interrupted by a limit are invalid and rerun.
@@ -400,6 +449,7 @@ from a new workspace and a new Claude configuration; an interrupted session is n
 | Date | Section | Change | Reason |
 | --- | --- | --- | --- |
 | 2026-11-11 | 4, 5.2 | While the framework was drafted, before the first freeze and before any trial: the large-offset calibration case was changed to non-integer steps; line length (E501) was removed from lint density; the sandbox now records the submission's declared package name and version as an installation would; trials in which a disallowed tool was available are marked invalid; a category-balanced sensitivity analysis was added. | Found by the evaluator validation and the fixture dry run. The details are in `docs/RESEARCH_LOG.md`. |
+| 2026-11-16 | header, 2, 7, 7.1, 8, 10, 12 | **Version 1.5, during data collection: unattended, non-interactive sessions.** Seven trials had been completed as manual, interactive sessions under version 1.4 (freeze record `b910a7b7afd0a1fd`): the six pilot trials and one confirmatory trial, `serial-dilution--B--r01`. All were valid; none received a continuation message. From this amendment, the remaining trials run with `rc-exp batch`: Claude Code's non-interactive mode (`claude -p`, never `--bare`) in the same container, with the same prompts, model, effort, permission mode, tools, time limit, subscription token, collection, and hidden evaluation, in the unchanged randomised order. No continuation message is sent. The batch refuses to start unless only the subscription token is present and the operator confirms that extra usage is off, and it stops at once on any sign of an API key, paid usage, the usage limit, or an authentication error (sections 7, 7.1, and 10). Every trial records its execution mode. Engineering validation runs (`eNN`) test the harness outside the schedule and are never analysed with pilot or confirmatory data. **Unchanged:** the tasks, prompts, hidden evaluator, expected answers, scoring (sections 4 and 5), sample sizes (section 6), randomised schedule (section 9), and the pre-registered analysis (section 11). The completed trials and their records are kept as they are and stay in the analyses they belong to; `serial-dilution--B--r01` stays in the primary analysis. **Exploratory addition**, reported separately as the header requires: the primary estimand recomputed without the interactively run confirmatory trial(s), labelled exploratory, with no hypothesis test. The clause in section 7.1 on changes of tool version or model does not apply, because neither changed. The version 1.4 protocol, configuration, and freeze record are kept verbatim in `experiments/freeze-history/`. | The experimenter can no longer supervise each session (the experimenter's stated reason). Unattended sessions also remove operator timing and judgement as sources of variation for the remaining trials. When the change was made, no confirmatory analysis had been run (only the pilot analysis existed); the one confirmatory trial had been evaluated automatically, as every trial is. |
 | 2026-11-14 | header, 7, 7.1 | **Version 1.4, before any trial: pre-pilot harness defect.** Every new agent container showed Claude Code's first-run setup (theme, then "Select login method") although `CLAUDE_CODE_OAUTH_TOKEN` reached the container. Claude Code 2.1.319 adds the login step to its first-run setup whenever that setup has not been completed, even when the token is set (upstream issue anthropics/claude-code#46259), and each container starts with a fresh home directory. The agent image now contains `~/.claude.json` with only `{"hasCompletedOnboarding": true}`, the state Claude Code itself records after its first-run setup. The theme and login screens no longer appear; the operator still answers the `/workspace` trust and permission-mode dialogs. `rc-exp check` now refuses an agent image without this file, and a token that contains whitespace. The tasks, prompts, model, settings, hidden evaluator, expected answers, scoring, analysis, and schedule are unchanged. No trial (pilot or confirmatory) had started. | Without it, the subscription token cannot be used in a trial. The change is identical for both conditions. |
 | 2026-11-14 | header, 7 | **Version 1.3, before any trial: pre-pilot harness defect.** The agent network's proxy refused `platform.claude.com`, so interactive Claude Code stopped at startup ("Unable to connect to Anthropic services … `platform.claude.com`: ERR_PROXY_TUNNEL") before any prompt was sent. Anthropic's network requirements (code.claude.com/docs/en/network-config) list this host for OAuth token exchange, refresh, and revocation for claude.ai accounts, and the first-run connectivity check tests it. It was added to the allowlist; nothing else was. The proxy log of the failed preflight showed it as the only refused host. `rc-exp check` now detects a proxy image built with an outdated allowlist. The tasks, prompts, hidden evaluator, expected answers, scoring, analysis, and schedule are unchanged. No trial (pilot or confirmatory) had started. | The subscription sign-in cannot work without the token service. Every other host stays blocked; regression tests check that GitHub, browser sign-in pages, optional services, and arbitrary sites are refused. |
 | 2026-11-12 | 3, 5.2, 7, 10 | **Version 1.2, before any trial.** (a) Section 3: the genuine evaluator (hidden cases, references, defective variants) moved to a private repository outside the public one. It had never been committed, and its cases, expected values, and reference solutions are byte-identical to version 1.1 (verified by hash); only its import interface changed. `FREEZE.json` publishes its hashes. Public CI uses a labelled fixture evaluator. (b) Section 5.2: tests inherited unchanged from the starter kit no longer count as the submission's tests, and are not used for its mutation score. (c) Section 10: usage-limit and API-error messages in the session log are detected automatically, and credential-like strings are redacted from saved session logs. (d) Section 7: corrected instructions for turning off paid usage credits. | (a) The repository is public, and committing the hidden material would expose it. (b) Without the change, the 137 starter-kit tests would be credited to every Condition B submission. (c, d) Safety review before the pilot. |

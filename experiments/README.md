@@ -15,7 +15,7 @@ This folder holds a pre-registered experiment that asks:
 | [`docs/PROTOCOL.md`](docs/PROTOCOL.md) | The pre-registered protocol: hypotheses, conditions, tasks, metrics, sample size, exclusions, analysis plan, threats to validity |
 | [`experiment.json`](experiment.json) | The same parameters, machine-readable (read by the harness and checked by the website's tests) |
 | [`FREEZE.json`](FREEZE.json) | SHA-256 of every file that defines the experiment, recorded before any trial |
-| [`docs/RUNNING_TRIALS.md`](docs/RUNNING_TRIALS.md) | How to run the trials: manual sessions in VS Code's terminal, through a Claude Pro subscription |
+| [`docs/RUNNING_TRIALS.md`](docs/RUNNING_TRIALS.md) | How to run the trials: unattended batches (`rc-exp batch`, protocol 1.5) or manual sessions, through a Claude Pro subscription |
 | [`docs/RESEARCH_LOG.md`](docs/RESEARCH_LOG.md) | How the framework was built with an AI assistant: decisions, errors, what the checks caught |
 | [`docs/REVIEW_RUBRIC.md`](docs/REVIEW_RUBRIC.md) | The blinded maintainability rubric |
 | [`docs/evaluator-validation.json`](docs/evaluator-validation.json) | Genuine evaluator validation: aggregate scores of the reference solutions and deliberate defects (not experimental results) |
@@ -32,13 +32,14 @@ experiments/
 │   ├── sandbox_scripts/       Runners executed inside the evaluation sandbox (standard library only)
 │   ├── checks.py, grading.py  Host-side grading of what the sandbox observed
 │   ├── workspace.py           Clean, isolated trial workspaces
-│   ├── agent.py               Manual Claude Code sessions in a container (subscription), or fixtures
+│   ├── agent.py               Claude Code sessions in a container (subscription): manual or unattended
+│   ├── batch.py               rc-exp batch: unattended trials in schedule order (protocol 1.5)
 │   ├── test_quality.py        Mutation score of a submission's own tests
 │   ├── static.py              Ruff (fixed rules, isolated), imports, dependencies
 │   ├── analysis.py            Pre-registered analysis, tables, figures
 │   └── cli.py                 `rc-exp`
 ├── docker/                    sandbox, agent, and proxy images (base images pinned by digest)
-├── results/                   genuine/ and pilot/ trials (empty until trials run)
+├── results/                   genuine/ and pilot/ trial records (kept private; see below)
 └── tests/                     Tests of the harness itself
 ```
 
@@ -49,8 +50,11 @@ the hidden cases with their expected values, the reference solutions, and the de
 defective variants for the three experiment tasks. It lives in a separate private Git
 repository on the experimenter's machine (default `~/researchcode-private/phase4-evaluator`, or
 the path in `RC_PRIVATE_EVALUATOR`). `FREEZE.json` publishes the SHA-256 hash of each of its
-files, so its integrity can be checked when it is released after data collection. Genuine and
-pilot trials cannot be prepared or evaluated without it.
+files. The protocol (section 3) committed to releasing the evaluator after data collection, so
+that it could be checked against these hashes. After the analysis and unblinding, the project
+owner decided not to release it: a deviation from the publication plan, recorded in
+`docs/RESEARCH_LOG.md` and the final report. Genuine and pilot trials cannot be prepared or
+evaluated without it.
 
 Public CI and dry runs use the **fixture evaluator** (`src/rc_experiments/fixture_evaluator/`).
 These are two clearly labelled practice tasks with their own public cases, references, and
@@ -62,7 +66,7 @@ defects. They test the machinery and never score a genuine trial.
 | --- | --- | --- |
 | Framework validation | The scoring system works: references score 100%, and every deliberate defect is caught. The sandbox and network isolation hold. | `docs/evaluator-validation.json`, the tests, CI |
 | Fixture dry runs | Every stage of the pipeline runs end to end on labelled practice data | Temporary folders only; every table and figure is labelled "FIXTURE DATA - NOT EXPERIMENTAL RESULTS" |
-| Genuine observations | What the experiment found | `results/genuine/` and `results/pilot/`, which are **empty: no trial has been run** |
+| Genuine observations | What the experiment found | Aggregate results in `docs/aggregate-results.json` and `docs/FINAL_REPORT.md`. The per-trial records in `results/` are **kept private** (a publication deviation; see `docs/RESEARCH_LOG.md`) |
 
 ## How a trial is isolated and scored
 
@@ -71,7 +75,9 @@ defects. They test the machinery and never score a genuine trial.
    Condition B only, the tracked files of `scientific-starter/`. The contents are checked
    against the plan and against every hidden file by hash. The trial record is stored next to
    the workspace, not inside it.
-2. **Agent.** The operator runs `rc-exp session`, which opens Claude Code interactively in a
+2. **Agent.** From protocol 1.5, `rc-exp batch` runs Claude Code non-interactively (`claude -p`)
+   for the next trials in schedule order (the first seven trials used `rc-exp session`, which
+   opens Claude Code interactively). Either way, Claude Code runs in a
    container where only that workspace is mounted. The prompt is already entered, and the
    model and settings are fixed. The container has a fresh home directory (with one setting
    that skips Claude Code's first-run login) and a new, empty Claude configuration, so none

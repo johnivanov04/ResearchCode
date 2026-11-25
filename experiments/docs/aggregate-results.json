@@ -1,0 +1,1371 @@
+{
+  "description": "Aggregate summary of the frozen, pre-registered analysis output (experiments/results/analysis/genuine/analysis.json, which is not public). It keeps the number of trials, mean, and median per task and condition, the differences B - A, and their 95% bootstrap intervals. It contains no per-trial records, trial identifiers, hidden-case identifiers, or evaluator material. Every secondary difference is descriptive; the permutation test of the primary measure is the only hypothesis test.",
+  "data_kind": "genuine",
+  "protocol_version": "1.5",
+  "generated_at": "2026-11-22T05:53:34+00:00",
+  "trials_found": 60,
+  "trials_included": 60,
+  "trials_excluded": 0,
+  "sample_size": {
+    "planned_per_cell": 10,
+    "planned_total": 60,
+    "achieved_total": 60,
+    "cells": [
+      {
+        "task": "serial-dilution",
+        "condition": "A",
+        "planned": 10,
+        "achieved": 10
+      },
+      {
+        "task": "serial-dilution",
+        "condition": "B",
+        "planned": 10,
+        "achieved": 10
+      },
+      {
+        "task": "calibration",
+        "condition": "A",
+        "planned": 10,
+        "achieved": 10
+      },
+      {
+        "task": "calibration",
+        "condition": "B",
+        "planned": 10,
+        "achieved": 10
+      },
+      {
+        "task": "enzyme-kinetics",
+        "condition": "A",
+        "planned": 10,
+        "achieved": 10
+      },
+      {
+        "task": "enzyme-kinetics",
+        "condition": "B",
+        "planned": 10,
+        "achieved": 10
+      }
+    ]
+  },
+  "inference": {
+    "inferential": true,
+    "permutation_p": 1.0,
+    "alpha": 0.05,
+    "note": "every cell has at least 5 valid trials; the pre-registered permutation test is reported"
+  },
+  "primary": {
+    "per_task": {
+      "serial-dilution": {
+        "A": {
+          "n": 10,
+          "mean": 1.0,
+          "median": 1.0
+        },
+        "B": {
+          "n": 10,
+          "mean": 1.0,
+          "median": 1.0
+        },
+        "difference_B_minus_A": 0.0,
+        "difference_ci": [
+          0.0,
+          0.0
+        ]
+      },
+      "calibration": {
+        "A": {
+          "n": 10,
+          "mean": 1.0,
+          "median": 1.0
+        },
+        "B": {
+          "n": 10,
+          "mean": 1.0,
+          "median": 1.0
+        },
+        "difference_B_minus_A": 0.0,
+        "difference_ci": [
+          0.0,
+          0.0
+        ]
+      },
+      "enzyme-kinetics": {
+        "A": {
+          "n": 10,
+          "mean": 1.0,
+          "median": 1.0
+        },
+        "B": {
+          "n": 10,
+          "mean": 1.0,
+          "median": 1.0
+        },
+        "difference_B_minus_A": 0.0,
+        "difference_ci": [
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "pooled": {
+      "A": {
+        "n": 30,
+        "mean": 1.0,
+        "median": 1.0
+      },
+      "B": {
+        "n": 30,
+        "mean": 1.0,
+        "median": 1.0
+      }
+    },
+    "difference_B_minus_A": 0.0,
+    "difference_ci": [
+      0.0,
+      0.0
+    ]
+  },
+  "categories": {
+    "known_answer": {
+      "per_task": {
+        "serial-dilution": {
+          "A": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "difference_B_minus_A": 0.0,
+          "difference_ci": [
+            0.0,
+            0.0
+          ]
+        },
+        "calibration": {
+          "A": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "difference_B_minus_A": 0.0,
+          "difference_ci": [
+            0.0,
+            0.0
+          ]
+        },
+        "enzyme-kinetics": {
+          "A": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "difference_B_minus_A": 0.0,
+          "difference_ci": [
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "pooled": {
+        "A": {
+          "n": 30,
+          "mean": 1.0,
+          "median": 1.0
+        },
+        "B": {
+          "n": 30,
+          "mean": 1.0,
+          "median": 1.0
+        }
+      },
+      "difference_B_minus_A": 0.0,
+      "difference_ci": [
+        0.0,
+        0.0
+      ]
+    },
+    "edge_case": {
+      "per_task": {
+        "serial-dilution": {
+          "A": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "difference_B_minus_A": 0.0,
+          "difference_ci": [
+            0.0,
+            0.0
+          ]
+        },
+        "calibration": {
+          "A": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "difference_B_minus_A": 0.0,
+          "difference_ci": [
+            0.0,
+            0.0
+          ]
+        },
+        "enzyme-kinetics": {
+          "A": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "difference_B_minus_A": 0.0,
+          "difference_ci": [
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "pooled": {
+        "A": {
+          "n": 30,
+          "mean": 1.0,
+          "median": 1.0
+        },
+        "B": {
+          "n": 30,
+          "mean": 1.0,
+          "median": 1.0
+        }
+      },
+      "difference_B_minus_A": 0.0,
+      "difference_ci": [
+        0.0,
+        0.0
+      ]
+    },
+    "invalid_input": {
+      "per_task": {
+        "serial-dilution": {
+          "A": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "difference_B_minus_A": 0.0,
+          "difference_ci": [
+            0.0,
+            0.0
+          ]
+        },
+        "calibration": {
+          "A": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "difference_B_minus_A": 0.0,
+          "difference_ci": [
+            0.0,
+            0.0
+          ]
+        },
+        "enzyme-kinetics": {
+          "A": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "difference_B_minus_A": 0.0,
+          "difference_ci": [
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "pooled": {
+        "A": {
+          "n": 30,
+          "mean": 1.0,
+          "median": 1.0
+        },
+        "B": {
+          "n": 30,
+          "mean": 1.0,
+          "median": 1.0
+        }
+      },
+      "difference_B_minus_A": 0.0,
+      "difference_ci": [
+        0.0,
+        0.0
+      ]
+    },
+    "numerical": {
+      "per_task": {
+        "serial-dilution": {
+          "A": {
+            "n": 0,
+            "mean": null,
+            "median": null
+          },
+          "B": {
+            "n": 0,
+            "mean": null,
+            "median": null
+          },
+          "difference_B_minus_A": null,
+          "difference_ci": null
+        },
+        "calibration": {
+          "A": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "difference_B_minus_A": 0.0,
+          "difference_ci": [
+            0.0,
+            0.0
+          ]
+        },
+        "enzyme-kinetics": {
+          "A": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "difference_B_minus_A": 0.0,
+          "difference_ci": [
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "pooled": {
+        "A": {
+          "n": 20,
+          "mean": 1.0,
+          "median": 1.0
+        },
+        "B": {
+          "n": 20,
+          "mean": 1.0,
+          "median": 1.0
+        }
+      },
+      "difference_B_minus_A": null,
+      "difference_ci": null
+    },
+    "reproducibility": {
+      "per_task": {
+        "serial-dilution": {
+          "A": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "difference_B_minus_A": 0.0,
+          "difference_ci": [
+            0.0,
+            0.0
+          ]
+        },
+        "calibration": {
+          "A": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "difference_B_minus_A": 0.0,
+          "difference_ci": [
+            0.0,
+            0.0
+          ]
+        },
+        "enzyme-kinetics": {
+          "A": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "difference_B_minus_A": 0.0,
+          "difference_ci": [
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "pooled": {
+        "A": {
+          "n": 30,
+          "mean": 1.0,
+          "median": 1.0
+        },
+        "B": {
+          "n": 30,
+          "mean": 1.0,
+          "median": 1.0
+        }
+      },
+      "difference_B_minus_A": 0.0,
+      "difference_ci": [
+        0.0,
+        0.0
+      ]
+    },
+    "integration": {
+      "per_task": {
+        "serial-dilution": {
+          "A": {
+            "n": 0,
+            "mean": null,
+            "median": null
+          },
+          "B": {
+            "n": 0,
+            "mean": null,
+            "median": null
+          },
+          "difference_B_minus_A": null,
+          "difference_ci": null
+        },
+        "calibration": {
+          "A": {
+            "n": 0,
+            "mean": null,
+            "median": null
+          },
+          "B": {
+            "n": 0,
+            "mean": null,
+            "median": null
+          },
+          "difference_B_minus_A": null,
+          "difference_ci": null
+        },
+        "enzyme-kinetics": {
+          "A": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "difference_B_minus_A": 0.0,
+          "difference_ci": [
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "pooled": {
+        "A": {
+          "n": 10,
+          "mean": 1.0,
+          "median": 1.0
+        },
+        "B": {
+          "n": 10,
+          "mean": 1.0,
+          "median": 1.0
+        }
+      },
+      "difference_B_minus_A": null,
+      "difference_ci": null
+    }
+  },
+  "secondary": {
+    "category_balanced_pass_rate": {
+      "per_task": {
+        "serial-dilution": {
+          "A": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "difference_B_minus_A": 0.0,
+          "difference_ci": [
+            0.0,
+            0.0
+          ]
+        },
+        "calibration": {
+          "A": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "difference_B_minus_A": 0.0,
+          "difference_ci": [
+            0.0,
+            0.0
+          ]
+        },
+        "enzyme-kinetics": {
+          "A": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "difference_B_minus_A": 0.0,
+          "difference_ci": [
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "pooled": {
+        "A": {
+          "n": 30,
+          "mean": 1.0,
+          "median": 1.0
+        },
+        "B": {
+          "n": 30,
+          "mean": 1.0,
+          "median": 1.0
+        }
+      },
+      "difference_B_minus_A": 0.0,
+      "difference_ci": [
+        0.0,
+        0.0
+      ]
+    },
+    "mutation_score": {
+      "per_task": {
+        "serial-dilution": {
+          "A": {
+            "n": 10,
+            "mean": 0.12222222222222223,
+            "median": 0.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 0.7,
+            "median": 1.0
+          },
+          "difference_B_minus_A": 0.5777777777777777,
+          "difference_ci": [
+            0.24444444444444446,
+            0.8888888888888888
+          ]
+        },
+        "calibration": {
+          "A": {
+            "n": 10,
+            "mean": 0.0,
+            "median": 0.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "difference_B_minus_A": 1.0,
+          "difference_ci": [
+            1.0,
+            1.0
+          ]
+        },
+        "enzyme-kinetics": {
+          "A": {
+            "n": 10,
+            "mean": 0.0,
+            "median": 0.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 0.9285714285714285,
+            "median": 0.9285714285714286
+          },
+          "difference_B_minus_A": 0.9285714285714285,
+          "difference_ci": [
+            0.8857142857142856,
+            0.9714285714285715
+          ]
+        }
+      },
+      "pooled": {
+        "A": {
+          "n": 30,
+          "mean": 0.040740740740740744,
+          "median": 0.0
+        },
+        "B": {
+          "n": 30,
+          "mean": 0.8761904761904762,
+          "median": 1.0
+        }
+      },
+      "difference_B_minus_A": 0.8354497354497354,
+      "difference_ci": [
+        0.7232804232804234,
+        0.9354497354497354
+      ]
+    },
+    "median_rel_error": {
+      "per_task": {
+        "serial-dilution": {
+          "A": {
+            "n": 10,
+            "mean": 0.0,
+            "median": 0.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 0.0,
+            "median": 0.0
+          },
+          "difference_B_minus_A": 0.0,
+          "difference_ci": [
+            0.0,
+            0.0
+          ]
+        },
+        "calibration": {
+          "A": {
+            "n": 10,
+            "mean": 1.9546301399069522e-16,
+            "median": 1.7226994378734477e-16
+          },
+          "B": {
+            "n": 10,
+            "mean": 2.0287863125368574e-16,
+            "median": 2.5268886813641524e-16
+          },
+          "difference_B_minus_A": 7.415617262990518e-18,
+          "difference_ci": [
+            -8.194764728183832e-17,
+            9.256160007367867e-17
+          ]
+        },
+        "enzyme-kinetics": {
+          "A": {
+            "n": 10,
+            "mean": 2.1658522327539581e-10,
+            "median": 2.6641594324382402e-12
+          },
+          "B": {
+            "n": 10,
+            "mean": 2.2305039050822915e-12,
+            "median": 2.25290833817861e-15
+          },
+          "difference_B_minus_A": -2.1435471937031351e-10,
+          "difference_ci": [
+            -5.851758343191973e-10,
+            -4.003075408623909e-12
+          ]
+        }
+      },
+      "pooled": {
+        "A": {
+          "n": 30,
+          "mean": 7.219513957946994e-11,
+          "median": 1.7226994378734477e-16
+        },
+        "B": {
+          "n": 30,
+          "mean": 7.435689279045151e-13,
+          "median": 2.5268886813641524e-16
+        }
+      },
+      "difference_B_minus_A": -7.145157065156541e-11,
+      "difference_ci": [
+        -1.9479726633630095e-10,
+        -1.1421343197336952e-12
+      ]
+    },
+    "security_findings": {
+      "per_task": {
+        "serial-dilution": {
+          "A": {
+            "n": 10,
+            "mean": 0.4,
+            "median": 0.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 0.0,
+            "median": 0.0
+          },
+          "difference_B_minus_A": -0.4,
+          "difference_ci": [
+            -1.0,
+            0.0
+          ]
+        },
+        "calibration": {
+          "A": {
+            "n": 10,
+            "mean": 0.1,
+            "median": 0.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 0.0,
+            "median": 0.0
+          },
+          "difference_B_minus_A": -0.1,
+          "difference_ci": [
+            -0.3,
+            0.0
+          ]
+        },
+        "enzyme-kinetics": {
+          "A": {
+            "n": 10,
+            "mean": 2.2,
+            "median": 2.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 0.0,
+            "median": 0.0
+          },
+          "difference_B_minus_A": -2.2,
+          "difference_ci": [
+            -2.8,
+            -1.6
+          ]
+        }
+      },
+      "pooled": {
+        "A": {
+          "n": 30,
+          "mean": 0.9,
+          "median": 0.0
+        },
+        "B": {
+          "n": 30,
+          "mean": 0.0,
+          "median": 0.0
+        }
+      },
+      "difference_B_minus_A": -0.9,
+      "difference_ci": [
+        -1.2,
+        -0.6333333333333333
+      ]
+    },
+    "lint_per_100_lines": {
+      "per_task": {
+        "serial-dilution": {
+          "A": {
+            "n": 10,
+            "mean": 0.7099420915319844,
+            "median": 0.4785127183643565
+          },
+          "B": {
+            "n": 10,
+            "mean": 0.0,
+            "median": 0.0
+          },
+          "difference_B_minus_A": -0.7099420915319844,
+          "difference_ci": [
+            -1.076407713729884,
+            -0.4770355586496762
+          ]
+        },
+        "calibration": {
+          "A": {
+            "n": 10,
+            "mean": 2.849478557818771,
+            "median": 1.7496429300142826
+          },
+          "B": {
+            "n": 10,
+            "mean": 0.0,
+            "median": 0.0
+          },
+          "difference_B_minus_A": -2.849478557818771,
+          "difference_ci": [
+            -4.239824340428568,
+            -1.6726175120607794
+          ]
+        },
+        "enzyme-kinetics": {
+          "A": {
+            "n": 10,
+            "mean": 6.044352399506339,
+            "median": 5.400585330162794
+          },
+          "B": {
+            "n": 10,
+            "mean": 1.2645285813885567,
+            "median": 0.7958652210884354
+          },
+          "difference_B_minus_A": -4.779823818117782,
+          "difference_ci": [
+            -6.566143630758054,
+            -3.2079023623994622
+          ]
+        }
+      },
+      "pooled": {
+        "A": {
+          "n": 30,
+          "mean": 3.201257682952365,
+          "median": 2.0291264759125665
+        },
+        "B": {
+          "n": 30,
+          "mean": 0.42150952712951895,
+          "median": 0.0
+        }
+      },
+      "difference_B_minus_A": -2.779748155822846,
+      "difference_ci": [
+        -3.5315212659696975,
+        -2.0913963732852294
+      ]
+    },
+    "extra_dependencies": {
+      "per_task": {
+        "serial-dilution": {
+          "A": {
+            "n": 10,
+            "mean": 0.0,
+            "median": 0.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 0.0,
+            "median": 0.0
+          },
+          "difference_B_minus_A": 0.0,
+          "difference_ci": [
+            0.0,
+            0.0
+          ]
+        },
+        "calibration": {
+          "A": {
+            "n": 10,
+            "mean": 0.0,
+            "median": 0.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 0.0,
+            "median": 0.0
+          },
+          "difference_B_minus_A": 0.0,
+          "difference_ci": [
+            0.0,
+            0.0
+          ]
+        },
+        "enzyme-kinetics": {
+          "A": {
+            "n": 10,
+            "mean": 0.0,
+            "median": 0.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 0.0,
+            "median": 0.0
+          },
+          "difference_B_minus_A": 0.0,
+          "difference_ci": [
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "pooled": {
+        "A": {
+          "n": 30,
+          "mean": 0.0,
+          "median": 0.0
+        },
+        "B": {
+          "n": 30,
+          "mean": 0.0,
+          "median": 0.0
+        }
+      },
+      "difference_B_minus_A": 0.0,
+      "difference_ci": [
+        0.0,
+        0.0
+      ]
+    },
+    "tests_collected": {
+      "per_task": {
+        "serial-dilution": {
+          "A": {
+            "n": 10,
+            "mean": 1.2,
+            "median": 0.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 221.9,
+            "median": 217.0
+          },
+          "difference_B_minus_A": 220.70000000000002,
+          "difference_ci": [
+            208.3,
+            234.2
+          ]
+        },
+        "calibration": {
+          "A": {
+            "n": 10,
+            "mean": 0.0,
+            "median": 0.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 100.4,
+            "median": 102.5
+          },
+          "difference_B_minus_A": 100.4,
+          "difference_ci": [
+            87.6,
+            112.4
+          ]
+        },
+        "enzyme-kinetics": {
+          "A": {
+            "n": 10,
+            "mean": 0.0,
+            "median": 0.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 75.5,
+            "median": 76.0
+          },
+          "difference_B_minus_A": 75.5,
+          "difference_ci": [
+            70.9,
+            79.9
+          ]
+        }
+      },
+      "pooled": {
+        "A": {
+          "n": 30,
+          "mean": 0.4,
+          "median": 0.0
+        },
+        "B": {
+          "n": 30,
+          "mean": 132.6,
+          "median": 102.5
+        }
+      },
+      "difference_B_minus_A": 132.20000000000002,
+      "difference_ci": [
+        126.1325,
+        138.40083333333334
+      ]
+    },
+    "wall_clock_minutes": {
+      "per_task": {
+        "serial-dilution": {
+          "A": {
+            "n": 10,
+            "mean": 1.4413333333333334,
+            "median": 1.4758333333333333
+          },
+          "B": {
+            "n": 10,
+            "mean": 6.594666666666667,
+            "median": 6.4625
+          },
+          "difference_B_minus_A": 5.153333333333333,
+          "difference_ci": [
+            4.3181625,
+            6.346029166666666
+          ]
+        },
+        "calibration": {
+          "A": {
+            "n": 10,
+            "mean": 1.6553333333333335,
+            "median": 1.4991666666666665
+          },
+          "B": {
+            "n": 10,
+            "mean": 8.6395,
+            "median": 7.158333333333333
+          },
+          "difference_B_minus_A": 6.984166666666667,
+          "difference_ci": [
+            5.01115,
+            9.241758333333333
+          ]
+        },
+        "enzyme-kinetics": {
+          "A": {
+            "n": 10,
+            "mean": 2.9516666666666667,
+            "median": 2.774166666666667
+          },
+          "B": {
+            "n": 10,
+            "mean": 10.831166666666666,
+            "median": 8.135
+          },
+          "difference_B_minus_A": 7.8795,
+          "difference_ci": [
+            4.982833333333333,
+            11.740833333333331
+          ]
+        }
+      },
+      "pooled": {
+        "A": {
+          "n": 30,
+          "mean": 2.016111111111111,
+          "median": 1.6433333333333335
+        },
+        "B": {
+          "n": 30,
+          "mean": 8.688444444444444,
+          "median": 7.270833333333334
+        }
+      },
+      "difference_B_minus_A": 6.6723333333333334,
+      "difference_ci": [
+        5.427809722222222,
+        8.194775
+      ]
+    },
+    "assistant_messages": {
+      "per_task": {
+        "serial-dilution": {
+          "A": {
+            "n": 10,
+            "mean": 7.0,
+            "median": 7.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 15.4,
+            "median": 15.0
+          },
+          "difference_B_minus_A": 8.4,
+          "difference_ci": [
+            6.6,
+            10.6
+          ]
+        },
+        "calibration": {
+          "A": {
+            "n": 10,
+            "mean": 7.4,
+            "median": 7.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 21.0,
+            "median": 21.0
+          },
+          "difference_B_minus_A": 13.6,
+          "difference_ci": [
+            10.200000000000001,
+            16.900000000000002
+          ]
+        },
+        "enzyme-kinetics": {
+          "A": {
+            "n": 10,
+            "mean": 9.9,
+            "median": 10.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 26.5,
+            "median": 23.0
+          },
+          "difference_B_minus_A": 16.6,
+          "difference_ci": [
+            11.999999999999998,
+            21.9
+          ]
+        }
+      },
+      "pooled": {
+        "A": {
+          "n": 30,
+          "mean": 8.1,
+          "median": 8.0
+        },
+        "B": {
+          "n": 30,
+          "mean": 20.966666666666665,
+          "median": 20.0
+        }
+      },
+      "difference_B_minus_A": 12.866666666666667,
+      "difference_ci": [
+        10.833333333333334,
+        15.033333333333331
+      ]
+    },
+    "output_tokens": {
+      "per_task": {
+        "serial-dilution": {
+          "A": {
+            "n": 10,
+            "mean": 9818.4,
+            "median": 9722.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 41139.7,
+            "median": 39683.5
+          },
+          "difference_B_minus_A": 31321.299999999996,
+          "difference_ci": [
+            28378.594999999998,
+            34364.575
+          ]
+        },
+        "calibration": {
+          "A": {
+            "n": 10,
+            "mean": 10020.1,
+            "median": 8809.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 44799.7,
+            "median": 41979.5
+          },
+          "difference_B_minus_A": 34779.6,
+          "difference_ci": [
+            28558.177499999998,
+            41502.587499999994
+          ]
+        },
+        "enzyme-kinetics": {
+          "A": {
+            "n": 10,
+            "mean": 17004.1,
+            "median": 17092.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 49736.4,
+            "median": 46315.0
+          },
+          "difference_B_minus_A": 32732.300000000003,
+          "difference_ci": [
+            27874.822500000002,
+            38310.0575
+          ]
+        }
+      },
+      "pooled": {
+        "A": {
+          "n": 30,
+          "mean": 12280.866666666667,
+          "median": 10938.5
+        },
+        "B": {
+          "n": 30,
+          "mean": 45225.26666666667,
+          "median": 43671.0
+        }
+      },
+      "difference_B_minus_A": 32944.4,
+      "difference_ci": [
+        30136.732500000002,
+        35959.739166666666
+      ]
+    }
+  },
+  "exploratory_execution_mode": {
+    "label": "EXPLORATORY (protocol 1.5): the primary estimand without the genuine trials that were run interactively, before the change to unattended sessions. Not part of the pre-registered analysis; no hypothesis test.",
+    "trials_included": 59,
+    "primary": {
+      "per_task": {
+        "serial-dilution": {
+          "A": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "B": {
+            "n": 9,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "difference_B_minus_A": 0.0,
+          "difference_ci": [
+            0.0,
+            0.0
+          ]
+        },
+        "calibration": {
+          "A": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "difference_B_minus_A": 0.0,
+          "difference_ci": [
+            0.0,
+            0.0
+          ]
+        },
+        "enzyme-kinetics": {
+          "A": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "B": {
+            "n": 10,
+            "mean": 1.0,
+            "median": 1.0
+          },
+          "difference_B_minus_A": 0.0,
+          "difference_ci": [
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "pooled": {
+        "A": {
+          "n": 30,
+          "mean": 1.0,
+          "median": 1.0
+        },
+        "B": {
+          "n": 29,
+          "mean": 1.0,
+          "median": 1.0
+        }
+      },
+      "difference_B_minus_A": 0.0,
+      "difference_ci": [
+        0.0,
+        0.0
+      ]
+    }
+  },
+  "counts": {
+    "trials_with_tests": {
+      "A": 2,
+      "B": 30
+    },
+    "trials_with_mutation_score_zero": {
+      "serial-dilution": {
+        "A": 8,
+        "B": 3
+      },
+      "calibration": {
+        "A": 10,
+        "B": 0
+      },
+      "enzyme-kinetics": {
+        "A": 10,
+        "B": 0
+      }
+    },
+    "execution_mode": {
+      "manual-interactive": 1,
+      "unattended-noninteractive": 59
+    }
+  }
+}

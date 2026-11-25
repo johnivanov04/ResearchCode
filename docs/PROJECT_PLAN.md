@@ -175,7 +175,7 @@ Phase 3 acceptance criteria:
    and is verified against the application's files by tests; all existing website and starter checks
    still pass.
 
-### Phase 4 — Controlled experiment (status: in progress; framework implemented on `feat/phase-4-evaluation`, no trials run)
+### Phase 4 — Controlled experiment (status: data collection and pre-registered analysis complete; report in `experiments/docs/FINAL_REPORT.md`)
 
 Research question: when the same AI coding agent, with the same model, tools, and budget, is
 given the same scientific programming task, does working within ResearchCode's structured
@@ -185,7 +185,7 @@ workflow produce more reliable scientific software than unstructured AI coding?
 | --- | --- |
 | Protocol | `experiments/docs/PROTOCOL.md` (version 1.0), written before any trial. `experiments/experiment.json` holds the same parameters for the harness and the website tests. `experiments/FREEZE.json` records the SHA-256 of every defining file. |
 | Conditions | A: the task statement only. B: the same statement plus the starter kit and its workflow. Same agent (Claude Code 2.1.319, `claude-opus-5-5`), tools, container, limits, and network. |
-| Access (protocol 1.1) | Manual, interactive Claude Code sessions (`rc-exp session`) through the owner's Claude Pro subscription; $0 additional spending. No API key, no automated model calls, and no model use in CI. Pro usage limits may reduce the number of trials; there is a fixed stopping rule, and planned and achieved sizes are reported. |
+| Access (protocols 1.1-1.5) | Manual, interactive Claude Code sessions (`rc-exp session`) for the pilot and the first confirmatory trial; from protocol 1.5, unattended non-interactive sessions (`rc-exp batch`); always through the owner's Claude Pro subscription; $0 additional spending. No API key, no automated model calls, and no model use in CI. Pro usage limits may reduce the number of trials; there is a fixed stopping rule, and planned and achieved sizes are reported. |
 | Tasks | `serial-dilution`, `calibration`, `enzyme-kinetics`, chosen for different failure modes. There is no growth-rate task, because the starter kit contains one. |
 | Hidden evaluator | Private: kept outside the public repository, with SHA-256 hashes in `FREEZE.json`; public CI uses a labelled fixture evaluator. 110 cases in six categories. Expected values are derived independently of the reference solutions. The sandbox reports observations only, and grading happens on the host. The references pass 100%, and all 24 deliberate defects are detected. |
 | Isolation | Workspaces live outside the repository and are checked by hash. The agent runs in a container behind an allow-list proxy (model API, the OAuth token service for the subscription sign-in, and PyPI only). Generated code is evaluated in a Docker sandbox with no network, a read-only file system, a non-root user, no capabilities, and resource limits. |
@@ -200,8 +200,11 @@ Phase 4 milestones:
    test-quality scoring, static checks, analysis, blinding, freeze record, and CI (done).
 4. Evaluator validation and an end-to-end fixture dry run (done).
 5. Human review of the protocol and evaluator; freeze confirmed (pending).
-6. Pilot trials: six manual sessions through the Claude Pro subscription, as usage allows (pending).
-7. Confirmatory trials, analysis, and publication on `/evaluation` (pending).
+6. Pilot trials: six manual sessions through the Claude Pro subscription (done). Confirmatory trials:
+   the first one manual; the rest unattended with `rc-exp batch` (protocol 1.5; all 60 done).
+7. Confirmatory trials, analysis, and publication on `/evaluation` (done: analysis run once on
+   2026-11-22; aggregate results on `/evaluation` and in `experiments/docs/aggregate-results.json`;
+   report in `experiments/docs/FINAL_REPORT.md`).
 
 Phase 4 acceptance criteria for the framework, met before any trial:
 1. From `experiments/`: `uv sync --locked`, `uv run pytest` (with the Docker tests),
@@ -252,6 +255,7 @@ Phase 4 acceptance criteria for the framework, met before any trial:
 ## 6. Open questions for later phases
 
 - Whether to add human participants to the AI-agent experiment (it would need IRB review first).
-- Licensing: code under MIT is assumed for the template; content license (e.g.
-  CC BY 4.0) to be confirmed with the course instructor.
+- Licensing: decided. The repository is released under the MIT License (root `LICENSE`), which
+  also covers the written content; `growth-analysis/` has its own copy. The frozen
+  `scientific-starter/README.md` still says no license has been chosen (see the root README).
 - Hosting domain and repository visibility.

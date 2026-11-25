@@ -1,7 +1,9 @@
-"""`rc-exp`: command-line interface to the Phase 4 experiment harness (protocol 1.1).
+"""`rc-exp`: command-line interface to the Phase 4 experiment harness.
 
-No command calls a model by itself. Trials are run as manual Claude Code sessions through the
-experimenter's Claude Pro subscription (`rc-exp session`), started and ended by the operator.
+Only three commands start Claude Code, and only when the operator runs them: `rc-exp preflight`
+(no task), `rc-exp session` (one manual, interactive trial; protocols 1.1-1.4), and
+`rc-exp batch` (unattended, non-interactive trials in schedule order; protocol 1.5). All use the
+experimenter's Claude subscription token only; no API key is ever used.
 """
 
 from __future__ import annotations
@@ -15,6 +17,7 @@ from pathlib import Path
 
 from rc_experiments import agent as agent_module
 from rc_experiments.analysis import analyse
+from rc_experiments.batch import BatchRefusedError, run_batch
 from rc_experiments.blind import make_packets
 from rc_experiments.config import EXPERIMENTS_DIR, RESULTS_DIR, Config
 from rc_experiments.dryrun import dry_run
@@ -37,7 +40,7 @@ def _backend(name: str, config: Config, *, trusted: bool = False):
 
 
 def _kind_for(trial: TrialId) -> str:
-    return "pilot" if trial.is_pilot else "genuine"
+    return trial.data_kind
 
 
 def _require_freeze() -> None:
@@ -169,11 +172,27 @@ def cmd_session(args: argparse.Namespace, config: Config) -> int:
     return 0
 
 
+def cmd_batch(args: argparse.Namespace, config: Config) -> int:
+    try:
+        return run_batch(
+            config,
+            args.trials_root,
+            limit=args.limit,
+            dry_run=args.dry_run,
+            confirm_extra_usage_off=args.confirm_extra_usage_off,
+            engineering=args.engineering_validation,
+        )
+    except BatchRefusedError as refused:
+        print(f"REFUSED (nothing was started): {refused}", file=sys.stderr)
+        return 2
+
+
 def cmd_set_validity(args: argparse.Namespace, config: Config) -> int:
     for root in (
         args.trials_root / args.trial,
         RESULTS_DIR / "genuine" / args.trial,
         RESULTS_DIR / "pilot" / args.trial,
+        RESULTS_DIR / "engineering" / args.trial,
     ):
         if (root / "trial.json").is_file():
             update_record(root, validity=args.validity, validity_reason=args.reason)
@@ -303,7 +322,10 @@ def cmd_check(args: argparse.Namespace, config: Config) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="rc-exp",
-        description="ResearchCode Phase 4 experiment harness. No command calls a model by itself.",
+        description=(
+            "ResearchCode Phase 4 experiment harness. Only preflight, session, and batch start Claude Code, and "
+            "only with the subscription token."
+        ),
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -328,8 +350,37 @@ def build_parser() -> argparse.ArgumentParser:
         func=cmd_preflight
     )
     trial_command("prepare", cmd_prepare, "create a clean workspace for a trial")
-    p = trial_command("session", cmd_session, "run a trial as a manual Claude Code session (subscription)")
+    p = trial_command("session", cmd_session, "run one trial as a manual, interactive session (protocols 1.1-1.4)")
     p.add_argument("--collect", action="store_true", help="collect and evaluate the trial after the session")
+    p = sub.add_parser(
+        "batch",
+        help="run the next trials unattended (claude -p), in schedule order (protocol 1.5)",
+        description=(
+            "Run up to --limit trials unattended and non-interactively, in the exact order of the randomised "
+            "schedule, then collect and evaluate each one. Stops at once on any sign of an API key, paid usage, a "
+            "usage limit, or an authentication error, and after any trial that needs a human decision. Never "
+            "runs a trial twice. Use --dry-run first."
+        ),
+    )
+    p.add_argument("--limit", type=int, default=1, help="maximum number of new sessions (default 1)")
+    p.add_argument("--dry-run", action="store_true", help="show what would run and every check; start nothing")
+    p.add_argument(
+        "--confirm-extra-usage-off",
+        action="store_true",
+        help="required: you checked today that extra usage is off (claude.ai, Settings > Usage)",
+    )
+    p.add_argument(
+        "--engineering-validation",
+        metavar="TASK--CONDITION",
+        help="run one engineering validation trial (eNN) outside the schedule, e.g. calibration--A",
+    )
+    p.add_argument(
+        "--trials-root",
+        type=Path,
+        default=DEFAULT_TRIALS_ROOT,
+        help=f"directory for trial workspaces, outside the repository (default {DEFAULT_TRIALS_ROOT})",
+    )
+    p.set_defaults(func=cmd_batch)
     p = trial_command("set-validity", cmd_set_validity, "record the operator's validity decision (protocol section 10)")
     p.add_argument("validity", choices=["valid", "invalid"])
     p.add_argument("--reason", required=True)

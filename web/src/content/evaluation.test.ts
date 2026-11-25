@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -10,9 +10,15 @@ import {
   evaluatorValidation,
   experimentStatus,
   experimentsDirectory,
+  limitations,
+  materials,
   primaryMetric,
   protocolUrl,
   protocolVersion,
+  aggregateResultsUrl,
+  protocol14Url,
+  reportSourceUrl,
+  reportUrl,
   researchLogUrl,
   researchQuestion,
   runningTrialsUrl,
@@ -62,13 +68,14 @@ describe("the evaluation page matches the experiment's actual configuration", ()
     });
   });
 
-  it("describes the zero-cost, manual subscription procedure as configured", () => {
+  it("describes the zero-cost subscription procedure as configured", () => {
     expect(access.additionalSpendingUsd).toBe(config.billing.additional_spending_usd);
     expect(access.additionalSpendingUsd).toBe(0);
     expect(config.billing.automated_model_calls).toBe(false);
+    expect(config.billing.api_key_fallback).toBe(false);
     expect(access.sessionMode).toBe(config.agent.session_mode);
     expect(access.summary).toMatch(/Claude Pro subscription/);
-    expect(access.summary).toMatch(/nothing calls the model automatically/);
+    expect(access.summary).toMatch(/no API key/);
     expect(access.operatorSteps.join(" ")).toContain(`after ${config.agent.wall_clock_limit_minutes} minutes`);
     expect(protocol).toContain("Additional spending | **$0.**");
     expect(JSON.stringify(config)).not.toContain("max_budget_usd");
@@ -110,12 +117,49 @@ describe("the evaluation page matches the experiment's actual configuration", ()
     }
   });
 
-  it("publishes no results while no trials have been run", () => {
-    expect(config.status).toBe("framework-ready");
-    for (const kind of ["genuine", "pilot"]) {
-      const folder = join(root, "results", kind);
-      const trials = readdirSync(folder).filter((name) => statSync(join(folder, name)).isDirectory());
-      expect(trials, `${kind} trials exist; update the page with real results`).toEqual([]);
+  it("shows results only from the completed analysis, and links to nothing that is not public", () => {
+    // experiment.json is frozen by hash, so its status field still reads "data-collection".
+    expect(["framework-ready", "data-collection"]).toContain(config.status);
+    const page = readFileSync(resolve(here, "../app/evaluation/page.tsx"), "utf8");
+    expect(page).not.toContain("No results yet");
+    // Never link to non-public material: the results directory or the private evaluator.
+    expect(page).not.toMatch(/results\/analysis|researchcode-private/);
+    // The report is served from web/public, and its Markdown source and the other linked documents exist.
+    expect(reportUrl).toBe("/reports/ResearchCode_Final_Report.pdf");
+    expect(existsSync(resolve(here, "../../public", `.${reportUrl}`))).toBe(true);
+    for (const url of [reportSourceUrl, aggregateResultsUrl, protocol14Url]) {
+      const path = url.replace(`${site.repository}/blob/main/${experimentsDirectory}/`, "");
+      expect(existsSync(join(root, path)), url).toBe(true);
+    }
+    // Public: what the release contains. Private: per-trial and evaluator material.
+    const isPublic = (name: string) => materials.find((m) => m.name === name)?.public;
+    expect(isPublic("Final research report")).toBe(true);
+    expect(isPublic("Protocol 1.5 amendment and batch runner")).toBe(true);
+    expect(isPublic("Per-trial confirmatory results and invalid attempts")).toBe(false);
+    expect(isPublic("Pilot results")).toBe(false);
+    expect(isPublic("Hidden evaluator")).toBe(false);
+    // The unkept publication commitments are acknowledged, not contradicted.
+    const privateText = materials.filter((m) => !m.public).map((m) => m.detail).join(" ");
+    expect(privateText).toMatch(/promised to release it after data collection/);
+    expect(privateText).toMatch(/promised to publish them separately/);
+    expect(privateText).toMatch(/promised to publish every attempt/);
+    expect(isPublic("Review packets and blinding key")).toBe(false);
+  });
+
+  it("discloses every limitation the final report names", () => {
+    const text = limitations.map((l) => `${l.title} ${l.body}`).join(" ");
+    for (const phrase of [
+      /ceiling/i,
+      /one agent/i,
+      /told to write tests/,
+      /measurement failure, not ineffective tests/,
+      /No security difference is claimed/,
+      /not conducted/,
+      /no independent timestamp that predates the first unattended trial/,
+      /No external team/,
+      /deviation from the publication plan was not pre-registered/,
+    ]) {
+      expect(text).toMatch(phrase);
     }
   });
 });

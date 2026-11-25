@@ -310,7 +310,7 @@ Limitations:
   the noise, growth rate, and sampling interval; it is not corrected.
 - Tested in CI on Ubuntu with Python 3.12 and 3.13; Windows and macOS are expected to work
   but are not tested in CI.
-- ResearchCode has not chosen a license yet.
+- ResearchCode is released under the MIT License; see `LICENSE` in this folder.
 
 ## Extending the application
 

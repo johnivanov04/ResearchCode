@@ -1,10 +1,13 @@
-# Running the trials (protocol 1.1: manual sessions, $0 additional cost)
+# Running the trials (protocol 1.5: unattended batches, $0 additional cost)
 
-Every trial is a **manual, interactive Claude Code session** that uses your existing **Claude
-Pro subscription**. The harness never starts a model session by itself. CI never runs a
-session. Nothing here uses an API key, usage credits, or any other paid service.
+Every trial uses your existing **Claude Pro subscription** and nothing else: no API key, usage
+credits, or other paid service. The pilot and the first confirmatory trial were **manual,
+interactive sessions** (protocols 1.1 to 1.4, section 4). From protocol 1.5, the remaining
+trials run **unattended**: `rc-exp batch` runs them one at a time in schedule order with Claude
+Code's non-interactive mode, then collects and evaluates each one (section 3). A session starts
+only when you run `rc-exp preflight`, `rc-exp session`, or `rc-exp batch`. CI never runs one.
 
-You work in **VS Code**, but every Claude Code session runs in the **integrated terminal,
+You work in **VS Code**, but every Claude Code session runs from the **integrated terminal,
 inside the agent container**. Do **not** use the Claude Code extension panel for trials. The
 extension runs on your Mac with access to this whole repository, including the hidden
 evaluator, and with your own settings and memory.
@@ -98,7 +101,138 @@ The proxy log (`docker logs rc-trials-proxy`) normally shows Claude Code's reque
 `github.com` and `downloads.claude.ai` being refused. That is intended: neither is needed for a
 session. Never add a host to the allowlist without an amendment to the protocol.
 
-## 3. Run one trial
+## 3. Run the remaining trials unattended (protocol 1.5)
+
+`rc-exp batch` takes the next trials from the randomised schedule (the same order as
+`rc-exp next`), runs each one with `claude -p` in the same container, with the same prompt,
+model, effort, tools, and 45-minute limit as a manual session, and then collects and evaluates
+it. No message is sent to the agent after the prompt. Each trial records its execution mode
+(`unattended-noninteractive`).
+
+### Before every batch
+
+1. **Extra usage is off** at [claude.ai/settings/usage](https://claude.ai/settings/usage)
+   (section 1, step 1). Check it on the day.
+2. **Preflight** (section 2): `/status` shows your subscription; `/usage` shows enough plan
+   usage. Choose `--limit` so the sessions fit. A session that reaches the usage limit is
+   stopped and is invalid.
+3. **Only the subscription token is set** in this terminal (section 1, step 2). The batch refuses
+   to start if any `ANTHROPIC_*`, `CLAUDE_CODE_USE_*`, or `CLAUDE_CODE_API_KEY*` variable is set.
+   This lists their names, never their values:
+
+   ```bash
+   env | cut -d= -f1 | grep -E '^(ANTHROPIC_|CLAUDE_CODE_USE_|CLAUDE_CODE_API_KEY)' || echo "none set"
+   ```
+
+4. `uv run rc-exp check` prints "ready for manual sessions". This also means the images and the
+   proxy are up to date.
+
+### See what would run (starts and writes nothing)
+
+```bash
+uv run rc-exp batch --dry-run --limit 5
+```
+
+It lists the next trials in schedule order and every check that would stop a real batch.
+
+### Run
+
+```bash
+uv run rc-exp batch --confirm-extra-usage-off --limit 5
+```
+
+`--confirm-extra-usage-off` is your statement that you checked step 1 today; without it the
+batch refuses to start. `--limit` is the maximum number of new sessions (default 1, at most
+60). You do not need to watch the sessions. Do not open or edit a trial's workspace while the
+batch runs.
+
+The batch **refuses to start** (exit code 2, nothing run) if the token is missing, malformed,
+or not a token from `claude setup-token`, if another credential variable is set, if files
+differ from `FREEZE.json`, if `rc-exp check` finds a problem, or if another batch is running.
+
+During a session it **stops the container at once** if Claude Code reports an API key as its
+credential, paid overage in use or available, the plan's usage limit, an authentication,
+billing, or rate-limit error, any mention of extra usage, or a model, permission mode,
+version, or tool set that differs from the protocol.
+
+After each trial, the batch **continues** only if the session completed normally and the trial
+was collected and evaluated. Otherwise it **stops** (exit code 1) and tells you why. It never
+skips a trial and never starts a trial twice. Run it again after you have dealt with the stop:
+it first finishes any collection or evaluation that did not complete, then continues with the
+next trial in the schedule.
+
+### Logs
+
+- `~/researchcode-trials/batch-log.jsonl`: one line per step of every batch (`tail -n 20` shows
+  the latest). It never contains credentials.
+- `~/researchcode-trials/<trial-id>/agent-stream.jsonl` and `agent-stderr.txt`: Claude Code's
+  output, with anything that looks like a credential redacted. They are copied into
+  `results/<kind>/<trial-id>/agent-output/` when the trial is collected. The stream includes
+  Claude Code's `total_cost_usd` field: under a subscription this is a notional estimate at API
+  prices, not a charge, and it is not analysed.
+- `trial.json`: the trial's record, including `agent.execution_mode`, `agent.completion`, and
+  `agent.stop_reason`.
+
+### When the batch stops
+
+| What it says | What happened | What to do |
+| --- | --- | --- |
+| `REFUSED` | A check failed before anything started | Fix the named problem and run it again |
+| usage limit / rate limit | The plan's limit was reached; the trial is invalid | Wait for the limit to reset, then rerun the trial (below) |
+| extra usage / overage | Paid usage was in use or available; the trial is invalid | Turn extra usage off at claude.ai, then rerun the trial (below) |
+| authentication or billing error | The token was rejected; the trial is invalid | Create a new token with `claude setup-token`, set it (section 1), then rerun the trial (below) |
+| API key source, or a model, version, or tool that differs | The configuration was wrong; the trial is invalid | Do not continue. Find the cause (for example a changed Claude Code version), then rerun the trial (below) |
+| the session's end is uncertain (`needs_review`) | Claude Code did not report a normal end | Read `agent-stream.jsonl` and the session log in the trial folder, then decide (below) |
+| wall-clock limit | The agent used all 45 minutes. The trial is valid, and was collected and evaluated | Look at its log, then run the batch again |
+| collecting or evaluating failed | The session is safe on disk | Fix the cause (for example, build the sandbox image), then run the batch again |
+| interrupted, or a session started but never recorded | The batch was stopped during a session (Ctrl-C, crash, power loss) | Record it as invalid (below); it is never resumed |
+| another batch holds the lock | A batch is running, or one crashed | Check with `pgrep -fl "rc-exp batch"`. If none is running, read the end of the batch log, then delete `~/researchcode-trials/.rc-batch.lock` |
+
+**Deciding a `needs_review` trial.** If the log shows a normal session, record it as valid and
+collect it yourself, then run the batch again:
+
+```bash
+uv run rc-exp set-validity <trial-id> valid --reason "unattended session ended normally; log reviewed"
+uv run rc-exp collect <trial-id>
+uv run rc-exp evaluate <trial-id>
+```
+
+Otherwise record it as invalid and rerun it. Never decide from the trial's score.
+
+**Rerunning an invalid trial.** Keep the attempt, move it aside, and run the batch again; it
+starts a new attempt from a new workspace:
+
+```bash
+uv run rc-exp set-validity <trial-id> invalid --reason "<what happened>"   # if not already invalid
+uv run rc-exp collect <trial-id>                                           # keeps the attempt's logs
+mkdir -p results/<kind>/invalid-attempts ~/researchcode-trials/invalid-attempts
+mv results/<kind>/<trial-id> results/<kind>/invalid-attempts/<trial-id>-attempt<N>
+mv ~/researchcode-trials/<trial-id> ~/researchcode-trials/invalid-attempts/<trial-id>-attempt<N>
+```
+
+`<kind>` is `genuine` for confirmatory trials. The batch refuses a fourth attempt (protocol
+section 10: at most two reruns).
+
+### Testing the harness first: an engineering validation run
+
+Before the first unattended confirmatory trial, run one trial outside the schedule to see the
+whole path work with your real token:
+
+```bash
+uv run rc-exp batch --dry-run --engineering-validation calibration--A
+uv run rc-exp batch --confirm-extra-usage-off --engineering-validation calibration--A
+```
+
+It uses a real task, prompt, and the hidden evaluation, but gets the replicate `e01` (then
+`e02`, ...), is stored in `results/engineering/`, does not change the schedule, and is never
+part of the pilot or confirmatory analysis. It uses plan usage like any session.
+
+## 4. Manual sessions (protocols 1.1 to 1.4)
+
+The pilot and `serial-dilution--B--r01` were run this way. It is kept for the record and for
+preflight checks; the remaining trials use section 3.
+
+### Run one trial
 
 1. Find the next trial in the randomised schedule:
 
@@ -137,7 +271,7 @@ session. Never add a host to the allowlist without an amendment to the protocol.
 Do not open or edit the trial workspace (`~/researchcode-trials/<trial-id>/workspace/`) while
 a session runs.
 
-## 4. The pilot: six trials
+## 5. The pilot: six trials
 
 The first six trials in the schedule (`p01`) are the pilot, one per task and condition, in
 schedule order. Run them as your plan's usage allows. They can be spread over several
@@ -155,7 +289,7 @@ uv run rc-exp analyze --kind pilot
 The pilot is descriptive only. Its analysis is labelled as pilot data and never counts as
 evidence for or against either workflow.
 
-## 5. If fewer trials are feasible
+## 6. If fewer trials are feasible
 
 Continue with confirmatory blocks (`r01`, `r02`, ...) only as far as your subscription allows.
 **Stop only at the end of a complete block**, so both conditions and all tasks stay balanced,
@@ -163,10 +297,11 @@ and never stop because of results. `rc-exp analyze --kind genuine` reports plann
 achieved trials for every cell and states the statistical limitations. With fewer than 5
 valid trials in any cell, there is no hypothesis test.
 
-## 6. Validity and reruns
+## 7. Validity and reruns
 
-`rc-exp session` classifies each trial from its session log and your answers
-(protocol section 10).
+`rc-exp session` classifies each trial from its session log and your answers, and
+`rc-exp batch` from Claude Code's streamed output and its session log (protocol section 10).
+For unattended trials, see also "When the batch stops" in section 3.
 
 **Invalid trials** include:
 
@@ -193,13 +328,17 @@ uv run rc-exp set-validity <trial-id> valid --reason "session ended normally; lo
 
 Never mark a trial invalid because of its score.
 
-## 7. Afterwards
+## 8. Afterwards
 
 ```bash
 uv run rc-exp analyze --kind genuine
 uv run rc-exp review-packets --out ../review-packets --key ../blinding-key.json
 uv run rc-exp network down
 ```
+
+The genuine analysis keeps every valid trial in the primary result, whatever its execution
+mode. Because the first confirmatory trial was run interactively, the report also contains a
+section labelled **exploratory** that repeats the primary estimand without it (protocol 1.5).
 
 Keep the blinding key from the reviewer until every packet is scored. Publish the analysis,
 including results that do not favour the structured workflow. Update `experiment.json`'s

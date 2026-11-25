@@ -1,9 +1,11 @@
-"""Agent sessions for trials: manual, subscription-based Claude Code sessions, or fixtures.
+"""Agent sessions for trials: subscription-based Claude Code sessions, or fixtures.
 
-Protocol 1.1 runs every trial as a **manual, interactive Claude Code session** that uses the
-experimenter's existing Claude Pro subscription. Nothing in this module calls a model by
-itself: a session starts only when the operator runs ``rc-exp session`` and ends when the
-operator exits Claude Code or the time limit stops the container.
+Protocols 1.1 to 1.4 ran every trial as a **manual, interactive Claude Code session**. From
+protocol 1.5, the remaining trials run **unattended and non-interactively** (``claude -p``),
+started by the operator with ``rc-exp batch`` (see ``batch.py``). Both modes use the same
+container, prompt, model, effort, permission mode, tools, time limit, and subscription token,
+and every trial records its execution mode. Nothing here starts a session unless the operator
+runs ``rc-exp session``, ``rc-exp preflight``, or ``rc-exp batch``.
 
 * :func:`session` opens Claude Code interactively in the agent container with only the trial
   workspace mounted, the trial's prompt already entered, the configured model and settings,
@@ -12,6 +14,10 @@ operator exits Claude Code or the time limit stops the container.
 * :func:`preflight` opens the same container with an empty directory and no prompt, so the
   operator can check the login (``/status``), the model (``/model``), and remaining usage
   (``/usage``) without starting a trial.
+* :func:`batch_session` runs one trial with ``claude -p`` in the same container, streams Claude
+  Code's output through :class:`StreamMonitor`, and stops the container at once on any sign
+  of an API key, paid usage, a usage limit, an authentication error, or a configuration
+  that differs from the protocol (protocol 1.5).
 * :func:`run_fixture` writes trusted fixture code instead of running an agent (dry runs only).
 
 Billing safety: the only credential ever passed into a container is ``CLAUDE_CODE_OAUTH_TOKEN``
@@ -24,15 +30,19 @@ from __future__ import annotations
 
 import json
 import os
+import queue
 import shutil
 import subprocess
 import tempfile
+import threading
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import IO, Any
 
 from rc_experiments.config import Config
+from rc_experiments.pipeline import redact_secrets
 from rc_experiments.trials import now_utc, read_json, update_record
 
 AGENT_IMAGE_PREFIX = "researchcode-agent"
@@ -134,13 +144,13 @@ def agent_image_problem(image: str) -> str | None:
     return None
 
 
-def credential_problem() -> str | None:
+def credential_problem(environ: Mapping[str, str] = os.environ) -> str | None:
     """None if the subscription token looks usable, else what is wrong. Never includes the value.
 
     A token copied from a terminal where it wrapped across lines can contain a space or a line
     break. Claude Code still accepts such a value as a token, and the server then rejects it.
     """
-    value = os.environ.get(SUBSCRIPTION_CREDENTIAL, "")
+    value = environ.get(SUBSCRIPTION_CREDENTIAL, "")
     if not value:
         return f"{SUBSCRIPTION_CREDENTIAL} is not set: create it once with `claude setup-token` (subscription)"
     if any(character.isspace() for character in value):
@@ -434,6 +444,402 @@ def preflight(
         name = f"rc-preflight-{int(time.time())}"
         runner(container_arguments(config, name, workspace, claude_config) + claude_arguments(config, None), 1800, name)
         shutil.rmtree(claude_config, ignore_errors=True)
+
+
+# --------------------------------------------------------------------------------------
+# Unattended, non-interactive sessions (protocol 1.5, `rc-exp batch`)
+# --------------------------------------------------------------------------------------
+
+EXECUTION_MODE_INTERACTIVE = "manual-interactive"  # protocols 1.1-1.4: `rc-exp session`
+EXECUTION_MODE_BATCH = "unattended-noninteractive"  # protocol 1.5: `rc-exp batch` (`claude -p`)
+BATCH_AGENT_MODE = "unattended-batch"  # value of agent["mode"] in a batch trial's record
+_MODE_TO_EXECUTION = {"manual-session": EXECUTION_MODE_INTERACTIVE, BATCH_AGENT_MODE: EXECUTION_MODE_BATCH}
+
+# Tokens from `claude setup-token` begin with this prefix (observed format); API keys with the
+# second. Anything else is treated as ambiguous, and the batch refuses to start.
+SUBSCRIPTION_TOKEN_PREFIX = "sk-ant-oat"  # noqa: S105 - a public prefix, not a secret
+API_KEY_PREFIX = "sk-ant-api"
+# Host variables that could select another credential, endpoint, or provider. None of them is
+# ever passed into a container; for an unattended batch their mere presence is a refusal.
+AMBIGUOUS_VARIABLE_PREFIXES = ("ANTHROPIC_", "CLAUDE_CODE_USE_", "CLAUDE_CODE_API_KEY")
+
+# Claude Code's API error kinds (2.1.319) that end a batch at once: the trial cannot continue
+# on the subscription, or continuing could mean paid or misconfigured usage.
+AUTHENTICATION_ERRORS = frozenset(
+    {"authentication_failed", "oauth_org_not_allowed", "account_on_hold", "verification_required",
+     "cloud_credential_error"}
+)  # fmt: skip
+BILLING_ERRORS = frozenset({"billing_error"})
+LIMIT_ERRORS = frozenset({"rate_limit"})
+CONFIGURATION_ERRORS = frozenset({"model_not_found", "invalid_request"})
+# Rate-limit statuses: "rejected" means the plan's usage limit is reached. An overage status of
+# "allowed" or "allowed_warning" means paid extra usage is available to this session.
+OVERAGE_AVAILABLE = frozenset({"allowed", "allowed_warning"})
+
+
+def execution_mode(record: Mapping[str, Any]) -> str | None:
+    """How a trial's session was run, for records from every protocol version."""
+    agent = record.get("agent") or {}
+    return agent.get("execution_mode") or _MODE_TO_EXECUTION.get(agent.get("mode"))
+
+
+def subscription_auth_problems(environ: Mapping[str, str] = os.environ) -> list[str]:
+    """Reasons to refuse an unattended batch: only an unambiguous subscription token is accepted.
+
+    Messages name variables, never their values.
+    """
+    problems = []
+    if problem := credential_problem(environ):
+        problems.append(problem)
+    token = environ.get(SUBSCRIPTION_CREDENTIAL, "")
+    if token.startswith(API_KEY_PREFIX):
+        problems.append(f"{SUBSCRIPTION_CREDENTIAL} holds an API key, not a subscription token; refusing")
+    elif token and not token.startswith(SUBSCRIPTION_TOKEN_PREFIX):
+        problems.append(
+            f"{SUBSCRIPTION_CREDENTIAL} does not look like a token from `claude setup-token`; refusing "
+            "because the authentication method would be ambiguous"
+        )
+    ambiguous = sorted(
+        name for name, value in environ.items() if value and name.startswith(AMBIGUOUS_VARIABLE_PREFIXES)
+    )
+    if ambiguous:
+        problems.append(
+            f"{', '.join(ambiguous)} set on this machine; unset {'it' if len(ambiguous) == 1 else 'them'} "
+            "before an unattended batch (only the subscription token may be present)"
+        )
+    return problems
+
+
+def batch_claude_arguments(config: Config, prompt: str) -> list[str]:
+    """Non-interactive Claude Code (`-p`, never `--bare`) with the same settings as a manual session."""
+    interactive = claude_arguments(config, prompt)
+    if interactive[:2] != ["claude", prompt]:
+        raise AgentError("unexpected interactive command layout")
+    return ["claude", "-p", prompt, "--output-format", "stream-json", "--verbose", *interactive[2:]]
+
+
+def batch_container_arguments(config: Config, name: str, workspace: Path, claude_config: Path) -> list[str]:
+    """The manual session's container, without a terminal: same image, limits, network, and token."""
+    return [arg for arg in container_arguments(config, name, workspace, claude_config) if arg != "-it"]
+
+
+class StreamMonitor:
+    """Reads Claude Code's stream-json output line by line and decides when to stop at once.
+
+    ``feed`` returns a reason to stop the container immediately, or None. It keeps a summary
+    of what Claude Code reported; values are copied, never estimated. ``total_cost_usd`` is not
+    kept: under a subscription it is Claude Code's notional estimate, not a charge.
+    """
+
+    def __init__(self, config: Config) -> None:
+        self.config = config
+        self.init: dict[str, Any] | None = None
+        self.result: dict[str, Any] | None = None
+        self.events: dict[str, int] = {}
+        self.unparsed_lines = 0
+        self.api_retries: list[dict[str, Any]] = []
+        self.api_errors: list[str] = []
+        self.rate_limits: list[dict[str, Any]] = []
+        self.stop_category: str | None = None
+        self.stop_reason: str | None = None
+
+    def _stop(self, category: str, reason: str) -> str:
+        if self.stop_reason is None:
+            self.stop_category, self.stop_reason = category, reason
+        return reason
+
+    def _error_kind(self, kind: Any, where: str) -> str | None:
+        kind = str(kind)
+        if kind in AUTHENTICATION_ERRORS:
+            return self._stop("authentication", f"authentication error ({kind}) {where}")
+        if kind in BILLING_ERRORS:
+            return self._stop("billing", f"billing error ({kind}) {where}")
+        if kind in LIMIT_ERRORS:
+            return self._stop("usage_limit", f"rate or usage limit ({kind}) {where}")
+        if kind in CONFIGURATION_ERRORS:
+            return self._stop("configuration", f"request rejected ({kind}) {where}")
+        return None
+
+    def _check_init(self, event: dict[str, Any]) -> str | None:
+        agent = self.config.agent
+        tools = event.get("tools") or []
+        self.init = {
+            "apiKeySource": event.get("apiKeySource"),
+            "model": event.get("model"),
+            "permissionMode": event.get("permissionMode"),
+            "claude_code_version": event.get("claude_code_version"),
+            "tools": len(tools),
+        }
+        if event.get("apiKeySource") != "none":
+            return self._stop(
+                "authentication",
+                f"Claude Code reports an API key source ({event.get('apiKeySource')!r}); only the subscription "
+                "token is allowed",
+            )
+        if event.get("model") != agent["model"]:
+            return self._stop("configuration", f"model {event.get('model')!r} is not {agent['model']!r}")
+        if event.get("permissionMode") != agent["permission_mode"]:
+            return self._stop("configuration", f"permission mode {event.get('permissionMode')!r} is not configured")
+        if event.get("claude_code_version") != agent["tool_version"]:
+            return self._stop("configuration", f"Claude Code {event.get('claude_code_version')!r} is not configured")
+        leaked = sorted(set(tools) & set(agent["disallowed_tools"]))
+        if leaked:
+            return self._stop("configuration", f"disallowed tools are available: {', '.join(leaked)}")
+        return None
+
+    def feed(self, line: str) -> str | None:
+        text = line.strip()
+        if not text:
+            return None
+        if "extra usage" in text.lower():
+            self.events["extra_usage_mention"] = self.events.get("extra_usage_mention", 0) + 1
+            return self._stop("extra_usage", "Claude Code mentioned extra usage (paid usage beyond the plan)")
+        try:
+            event = json.loads(text)
+        except json.JSONDecodeError:
+            self.unparsed_lines += 1
+            return None
+        if not isinstance(event, dict):
+            self.unparsed_lines += 1
+            return None
+        kind = f"{event.get('type')}/{event.get('subtype')}" if event.get("subtype") else str(event.get("type"))
+        self.events[kind] = self.events.get(kind, 0) + 1
+        if event.get("type") == "system" and event.get("subtype") == "init":
+            return self._check_init(event)
+        if event.get("type") == "system" and event.get("subtype") == "api_retry":
+            self.api_retries.append({k: event.get(k) for k in ("attempt", "error_status", "error")})
+            return self._error_kind(event.get("error"), "while retrying a request")
+        if event.get("type") == "rate_limit_event":
+            info = event.get("rate_limit_info") or {}
+            self.rate_limits.append(
+                {k: info.get(k) for k in ("status", "rateLimitType", "overageStatus", "isUsingOverage", "resetsAt")}
+            )
+            if info.get("isUsingOverage"):
+                return self._stop("extra_usage", "the session is using paid overage (extra usage)")
+            if info.get("overageStatus") in OVERAGE_AVAILABLE:
+                return self._stop(
+                    "extra_usage",
+                    f"paid overage is available to this session (overage status {info.get('overageStatus')!r}); "
+                    "turn off extra usage in the Claude account",
+                )
+            if info.get("status") == "rejected":
+                return self._stop("usage_limit", "the subscription's usage limit was reached")
+            return None
+        if event.get("type") == "assistant" and (event.get("error") or event.get("is_api_error_message")):
+            blocks = (event.get("message") or {}).get("content") or []
+            message = " ".join(str(b.get("text", "")) for b in blocks if isinstance(b, dict))
+            self.api_errors.append(f"{event.get('error')}: {message}"[:200])
+            return self._error_kind(event.get("error"), "in Claude Code's reply")
+        if event.get("type") == "result":
+            self.result = {
+                k: event.get(k)
+                for k in ("subtype", "is_error", "terminal_reason", "num_turns", "duration_ms", "api_error_status")
+            }
+        return None
+
+    @property
+    def completed(self) -> bool:
+        """Claude Code's own definition of a finished turn: a result without error that completed."""
+        return bool(
+            self.result is not None
+            and self.result.get("is_error") is False
+            and self.result.get("terminal_reason") == "completed"
+        )
+
+    def summary(self) -> dict[str, Any]:
+        return {
+            "init": self.init,
+            "result": self.result,
+            "event_counts": dict(sorted(self.events.items())),
+            "unparsed_lines": self.unparsed_lines,
+            "api_retries": self.api_retries,
+            "api_errors": self.api_errors,
+            "rate_limits": self.rate_limits,
+            "stop_category": self.stop_category,
+            "stop_reason": self.stop_reason,
+        }
+
+
+KILL_GRACE_SECONDS = 120
+
+
+@dataclass
+class RunOutcome:
+    exit_code: int | None
+    timed_out: bool
+    aborted: str | None  # the StreamMonitor's reason, if the container was stopped early
+
+
+def stop_container(name: str, process: subprocess.Popen[str], *, immediately: bool) -> None:
+    """Stop a trial container: at once (`docker kill`) on a safety stop, or gracefully at the time limit."""
+    command = ["docker", "kill", name] if immediately else ["docker", "stop", "--time", "5", name]
+    subprocess.run(command, capture_output=True, timeout=60, check=False)
+
+
+def _pump_lines(stream: IO[str], lines: queue.Queue[str | None]) -> None:
+    for line in stream:
+        lines.put(line)
+    lines.put(None)
+
+
+def run_noninteractive(
+    command: list[str],
+    limit_s: float,
+    name: str,
+    stream_path: Path,
+    stderr_path: Path,
+    monitor: StreamMonitor,
+    *,
+    stop: Callable[..., None] = stop_container,
+    clock: Callable[[], float] = time.monotonic,
+) -> RunOutcome:
+    """Run a non-interactive container, saving its output (redacted) and enforcing every stop rule.
+
+    A safety stop kills the container at once; the time limit stops it gracefully. If it is
+    still running ``KILL_GRACE_SECONDS`` after either, it is killed again, with its client.
+    """
+    deadline = clock() + limit_s
+    timed_out, aborted = False, None
+    stop_requested: float | None = None
+    with stderr_path.open("w", encoding="utf-8") as stderr, stream_path.open("w", encoding="utf-8") as out:
+        process = subprocess.Popen(
+            command, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=stderr, text=True,
+            encoding="utf-8", errors="replace",
+        )  # fmt: skip
+        if process.stdout is None:
+            raise AgentError("the container's output could not be read")
+        lines: queue.Queue[str | None] = queue.Queue()
+        reader = threading.Thread(target=_pump_lines, args=(process.stdout, lines), daemon=True)
+        reader.start()
+        try:
+            while True:
+                try:
+                    line = lines.get(timeout=0.5)
+                except queue.Empty:
+                    line = ""
+                if line is None:
+                    break
+                if line:
+                    out.write(redact_secrets(line if line.endswith("\n") else line + "\n"))
+                    out.flush()
+                    reason = monitor.feed(line)
+                    if reason and aborted is None:
+                        aborted, stop_requested = reason, clock()
+                        stop(name, process, immediately=True)
+                if not timed_out and aborted is None and clock() > deadline:
+                    timed_out, stop_requested = True, clock()
+                    stop(name, process, immediately=False)
+                elif stop_requested is not None and clock() > stop_requested + KILL_GRACE_SECONDS:
+                    if process.poll() is None:
+                        stop(name, process, immediately=True)
+                        process.kill()
+                    stop_requested = None
+            exit_code = process.wait(timeout=120)
+        except BaseException:
+            stop(name, process, immediately=True)
+            process.kill()
+            process.wait(timeout=30)
+            raise
+        finally:
+            reader.join(timeout=10)
+            process.stdout.close()
+    stderr_path.write_text(redact_secrets(stderr_path.read_text(encoding="utf-8", errors="replace")))
+    return RunOutcome(exit_code=exit_code, timed_out=timed_out, aborted=aborted)
+
+
+def classify_batch_session(agent: dict[str, Any], config: Config) -> tuple[str, str]:
+    """Protocol section 10 applied to an unattended session (version 1.5).
+
+    A safety stop is an infrastructure or configuration failure (invalid). An unclear ending
+    needs a human decision (needs_review). Otherwise the manual-session rules apply unchanged.
+    """
+    category, reason = agent.get("stop_category"), agent.get("stop_reason")
+    if category in ("extra_usage", "usage_limit", "authentication", "billing", "configuration"):
+        return "invalid", f"stopped by the batch runner: {reason}"
+    validity, why = classify_session(agent, config)
+    if validity != "valid":
+        return validity, why
+    if agent.get("timed_out"):
+        return validity, why  # reaching the wall-clock limit is a valid outcome (section 10)
+    if agent.get("completion") != "completed":
+        return "needs_review", f"the session's end is uncertain ({agent.get('completion_detail')})"
+    return "valid", "session completed (unattended, non-interactive)"
+
+
+def batch_session(
+    trial_dir: Path,
+    config: Config,
+    *,
+    batch_id: str,
+    runner: Callable[..., RunOutcome] = run_noninteractive,
+    environ: Mapping[str, str] = os.environ,
+) -> dict[str, Any]:
+    """Run one prepared trial unattended (`claude -p`) and record what happened (protocol 1.5).
+
+    The record is marked as started before the container starts, so an interrupted batch is
+    never mistaken for a trial that has not run. The trial is never started twice.
+    """
+    if problems := subscription_auth_problems(environ):
+        raise AgentError("; ".join(problems))
+    record = read_json(trial_dir / "trial.json")
+    if record.get("agent") or record.get("batch"):
+        raise AgentError(f"{record['trial_id']} has already been started; it is never run twice")
+    claude_config = trial_dir / "claude-config"
+    if claude_config.exists():
+        raise AgentError(f"{record['trial_id']} has a Claude configuration from an earlier start; not rerun")
+    prompt = (trial_dir / "prompt.txt").read_text(encoding="utf-8")
+    name = f"rc-batch-{record['trial_id'].replace('--', '-')}-{int(time.time())}"
+    started_at, started = now_utc(), time.monotonic()
+    update_record(trial_dir, batch={"batch_id": batch_id, "container": name, "started_at": started_at})
+    claude_config.mkdir()
+    command = batch_container_arguments(config, name, trial_dir / "workspace", claude_config)
+    command += batch_claude_arguments(config, prompt)
+    monitor = StreamMonitor(config)
+    limit_s = 60 * float(config.agent["wall_clock_limit_minutes"])
+    outcome = runner(command, limit_s, name, trial_dir / "agent-stream.jsonl", trial_dir / "agent-stderr.txt", monitor)
+    seconds = time.monotonic() - started
+    credentials = claude_config / ".credentials.json"
+    if credentials.exists():  # never created by a token session; never kept
+        credentials.unlink()
+    if outcome.aborted:
+        completion, detail = "stopped", outcome.aborted
+    elif outcome.timed_out:
+        completion, detail = "timed_out", f"stopped at the {config.agent['wall_clock_limit_minutes']}-minute limit"
+    elif monitor.completed and outcome.exit_code == 0 and not monitor.unparsed_lines:
+        completion, detail = "completed", "Claude Code reported a completed turn without error"
+    else:
+        completion = "uncertain"
+        detail = (
+            f"exit code {outcome.exit_code}; result {monitor.result}; {monitor.unparsed_lines} unparsed output lines"
+        )
+    agent = {
+        "mode": BATCH_AGENT_MODE,
+        "execution_mode": EXECUTION_MODE_BATCH,
+        "batch_id": batch_id,
+        "image": agent_image(config),
+        "configured_model": config.agent["model"],
+        "configured_effort": config.agent["effort"],
+        "started_at": started_at,
+        "ended_at": now_utc(),
+        "wall_clock_seconds": round(seconds, 1),
+        "timed_out": outcome.timed_out,
+        "exit_code": outcome.exit_code,
+        "completion": completion,
+        "completion_detail": detail,
+        "stop_category": monitor.stop_category,
+        "stop_reason": monitor.stop_reason,
+        "stream": monitor.summary(),
+        **parse_session_logs(session_logs(claude_config)),
+        # No operator takes part: no continuation message and no other input (protocol 1.5).
+        "continuation_messages": 0,
+        "operator_other_input": False,
+        "operator_reported_usage_limit": None,
+        "operator_reported_extra_usage": None,
+        "operator_notes": "",
+    }
+    validity, reason = classify_batch_session(agent, config)
+    update_record(trial_dir, agent=agent, validity=validity, validity_reason=reason)
+    return agent
 
 
 def run_fixture(trial_dir: Path, files: dict[str, str]) -> dict[str, Any]:

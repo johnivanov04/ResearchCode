@@ -18,9 +18,10 @@ Plan and phase status: `docs/PROJECT_PLAN.md`.
 - `growth-analysis/` — growth-curve analysis application built from the starter (Phase 3). It has its own
   `AGENTS.md`/`CLAUDE.md`; follow them, and change `docs/spec-growth-curve.md` before changing the method.
 - `experiments/` — pre-registered Phase 4 experiment (protocol, tasks, hidden evaluator, harness). It has its
-  own `AGENTS.md`/`CLAUDE.md`; follow them. Never copy hidden material into workspaces or the website. Trials are
-  manual Claude Code sessions run by the human through their Claude Pro subscription ($0 additional spending):
-  never start a session, call a model API, or add an API key or automated model call.
+  own `AGENTS.md`/`CLAUDE.md`; follow them. Never copy hidden material into workspaces or the website. Trials run
+  through the human's Claude Pro subscription ($0 additional spending): manual sessions (protocols 1.1-1.4) and,
+  from protocol 1.5, unattended `rc-exp batch` runs that only the human starts. Never start a session or batch,
+  call a model API, add an API key or API-key fallback, or add any other automated model call.
 - `docs/` — plans and design docs.
 
 ## Website conventions
@@ -49,7 +50,8 @@ npm run build
 
 ## Starter kit conventions (`scientific-starter/`)
 - Keep it self-contained: no references to files outside the folder, no runtime dependencies
-  unless clearly necessary, no license until the owner chooses one.
+  unless clearly necessary. The root MIT `LICENSE` covers it; do not add a license file inside
+  `scientific-starter/` while it is frozen (it would change the Condition B treatment and the freeze).
 - `web/src/content/starter-kit.ts` describes it on the website; tests check that its paths exist
   and its commands appear in `scientific-starter/README.md`. Update both together.
 - Verify from `scientific-starter/` before finishing any change:
