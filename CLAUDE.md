@@ -27,8 +27,11 @@ Plan and phase status: `docs/PROJECT_PLAN.md`.
 ## Website conventions
 - Next.js 16 differs from older versions: read `web/node_modules/next/dist/docs/` before
   using an unfamiliar API (see `web/AGENTS.md`).
-- Every page must stay static: the root layout sets `ensureStatic = "navigation"`. Do not add
-  cookies/headers/uncached fetches, a backend, auth, a database, or paid APIs.
+- Every page must stay static: `web/next.config.ts` sets `output: "export"`, so `npm run build`
+  writes the site to `web/out/` (served by Cloudflare Pages) and fails if a page needs request-time
+  rendering. Do not add cookies/headers, request-reading route handlers, rewrites, redirects, a
+  backend, auth, a database, or paid APIs, and give every dynamic route `generateStaticParams`.
+  Cache Components and `ensureStatic` are incompatible with static export in this Next.js version.
 - Do not add a root `loading.tsx`: it hides prerendered content behind a Suspense swap.
 - Guides are typed modules in `web/src/content/guides/`; register new ones in `index.ts`.
   Text fields support `backtick` inline code only. Escape backticks inside template literals.

@@ -6,13 +6,6 @@ import { SiteHeader } from "@/components/site-header";
 import { site } from "@/content/site";
 import "./globals.css";
 
-/**
- * Every route on this site must be fully prerendered at build time. If a change
- * introduces request-time rendering (cookies, headers, uncached fetches), the
- * build fails instead of silently becoming dynamic.
- */
-export const ensureStatic = "navigation";
-
 const plexSans = IBM_Plex_Sans({
   variable: "--font-plex-sans",
   subsets: ["latin"],
