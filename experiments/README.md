@@ -1,12 +1,46 @@
 # ResearchCode Phase 4: controlled evaluation
 
-**Status: the framework is implemented and verified. No AI trials have been run, so there
-are no results yet.** Trials are run as manual Claude Code sessions through the experimenter's
-existing Claude Pro subscription, with **$0 additional spending** (protocol 1.1).
+**Status: complete.** All 60 confirmatory trials were run (three tasks × two conditions ×
+10 trials) and the pre-registered analysis ran once, on 2026-11-22. Trials ran as Claude Code
+sessions through the experimenter's existing Claude Pro subscription, with **$0 additional
+spending** (protocol 1.1): the six pilot trials and the first confirmatory trial as manual
+sessions, the other 59 unattended (protocol 1.5).
+
+## Results
+
+- **Primary outcome:** every submission in both conditions passed every hidden evaluation case
+  (100% hidden pass rate). The difference was 0.0 percentage points (95% bootstrap CI [0, 0];
+  stratified permutation p = 1.0000).
+- **Primary hypothesis not supported.** It stated that the hidden pass rate differs between the
+  conditions, with B > A expected and a two-sided test. This is a ceiling effect, not evidence
+  that the workflows are equivalent in general.
+- **Secondary measures** are descriptive only, with no hypothesis tests. The table gives means
+  over 30 trials per condition.
+
+  | Measure | A: unstructured | B: ResearchCode |
+  | --- | --- | --- |
+  | Mutation score of the submission's own tests | 4.1% | 87.6% |
+  | Tests written per submission | 0.4 (2 of 30 trials wrote any) | 132.6 (all 30) |
+  | Lint findings per 100 lines | 3.20 | 0.42 |
+  | Session time (minutes) | 2.02 | 8.69 |
+  | Output tokens | 12,281 | 45,225 |
+
+  Condition B was told to write tests and run Ruff, so these differences are partly a direct
+  result of the treatment.
+- **Post-hoc diagnostics.** The security metric counted Ruff `SIM` rules, so no security
+  difference is claimed. Mutation validation failed in three serial-dilution B trials, so
+  their recorded zeros are a measurement failure. The planned blinded maintainability review
+  was not conducted.
+
+The full account, with uncertainty, limitations, and the publication deviation, is in the
+final report: [`docs/FINAL_REPORT.md`](docs/FINAL_REPORT.md), also available
+[as a PDF](../web/public/reports/ResearchCode_Final_Report.pdf). The aggregate results are in
+[`docs/aggregate-results.json`](docs/aggregate-results.json) and on the website's
+[evaluation page](https://researchcode.pages.dev/evaluation).
 
 This folder holds a pre-registered experiment that asks:
 
-> When the same AI coding agent, with the same model, tools, and budget, is given the same
+> When the same AI coding agent, with the same model, tools, and limits, is given the same
 > scientific programming task, does working within ResearchCode's structured workflow
 > produce more reliable scientific software than unstructured AI coding?
 
@@ -14,9 +48,12 @@ This folder holds a pre-registered experiment that asks:
 | --- | --- |
 | [`docs/PROTOCOL.md`](docs/PROTOCOL.md) | The pre-registered protocol: hypotheses, conditions, tasks, metrics, sample size, exclusions, analysis plan, threats to validity |
 | [`experiment.json`](experiment.json) | The same parameters, machine-readable (read by the harness and checked by the website's tests) |
-| [`FREEZE.json`](FREEZE.json) | SHA-256 of every file that defines the experiment, recorded before any trial |
-| [`docs/RUNNING_TRIALS.md`](docs/RUNNING_TRIALS.md) | How to run the trials: unattended batches (`rc-exp batch`, protocol 1.5) or manual sessions, through a Claude Pro subscription |
-| [`docs/RESEARCH_LOG.md`](docs/RESEARCH_LOG.md) | How the framework was built with an AI assistant: decisions, errors, what the checks caught |
+| [`FREEZE.json`](FREEZE.json) | SHA-256 of every file that defines the experiment (protocol 1.5 record) |
+| [`freeze-history/`](freeze-history/) | The superseded protocol 1.4, configuration, and freeze record, made before any trial |
+| [`docs/RUNNING_TRIALS.md`](docs/RUNNING_TRIALS.md) | How the trials were run: unattended batches (`rc-exp batch`, protocol 1.5) or manual sessions, through a Claude Pro subscription |
+| [`docs/RESEARCH_LOG.md`](docs/RESEARCH_LOG.md) | How the framework was built with an AI assistant, data collection, the analysis, post-hoc diagnostics, and the publication deviation |
+| [`docs/FINAL_REPORT.md`](docs/FINAL_REPORT.md) | The final research report |
+| [`docs/aggregate-results.json`](docs/aggregate-results.json) | Aggregate results of the pre-registered analysis (no per-trial records) |
 | [`docs/REVIEW_RUBRIC.md`](docs/REVIEW_RUBRIC.md) | The blinded maintainability rubric |
 | [`docs/evaluator-validation.json`](docs/evaluator-validation.json) | Genuine evaluator validation: aggregate scores of the reference solutions and deliberate defects (not experimental results) |
 
@@ -122,9 +159,10 @@ uv run rc-exp freeze --check          # frozen files unchanged
 
 `validate-evaluator` and `dry-run` use Docker by default (`--backend local` runs the trusted
 references and fixtures without isolation) and use no model. Running real trials
-(`rc-exp preflight`, `rc-exp session`) is described in
-[`docs/RUNNING_TRIALS.md`](docs/RUNNING_TRIALS.md). Every session is started by a person, uses
-the Claude Pro subscription, and is never run by CI.
+(`rc-exp preflight`, `rc-exp session`, `rc-exp batch`) is described in
+[`docs/RUNNING_TRIALS.md`](docs/RUNNING_TRIALS.md). Every session or batch is started by a
+person, uses the Claude Pro subscription, and is never run by CI. Genuine trials also need the
+private evaluator, so they cannot be rerun from this repository alone.
 
 On macOS, if this repository is in an iCloud-synced folder, set `UV_PROJECT_ENVIRONMENT` to a
 directory outside it (see the repository's `CLAUDE.md`).
