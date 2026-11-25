@@ -55,9 +55,10 @@ export default function AboutPage() {
         intro={
           <>
             <p>
-              ResearchCode is being developed as a special project in Caltech&apos;s CS/EE 143. It is a student
-              project and an educational resource. It is not an official Caltech publication, service, or
-              policy, and it has not been endorsed by any department or faculty member.
+              ResearchCode is being developed as a special project in Caltech&apos;s CS/EE 143, assigned to a
+              four-person student team: John Ivanov, Bryan Kim, Riley Coover, and Yurii Ilnytskyi. It is a student project and an educational resource.
+              It is not an official Caltech publication, service, or policy, and it has not been endorsed by
+              any department or faculty member.
             </p>
             <p className="mt-4">
               The intended audience is the wider research community: anyone who writes scientific Python and

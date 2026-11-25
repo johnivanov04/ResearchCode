@@ -767,6 +767,17 @@ condition. They name no trial. The report also names a few individual values: th
 serial-dilution Condition B trials with no valid tests, and the enzyme-kinetics trial with 58
 of 62 valid tests.
 
+## Team attribution note (2026-11-24)
+
+ResearchCode is a Caltech CS/EE 143 special project of a four-person team: John Ivanov, Bryan
+Kim, Riley Coover, and Yurii Ilnytskyi. All four are coauthors of the final report.
+
+Throughout this log, "the project owner" is John Ivanov, who is also the experiment operator.
+The log was written during Phase 4 from the project owner's sessions with Claude Code. It does
+not itemise the other team members' contributions, and that is not a statement that they made
+none. The earlier entries are unchanged: this note neither adds nor removes anyone's documented
+participation.
+
 ## Open items
 
 - **Publish the analysis**, including results that do not favour the structured workflow. State

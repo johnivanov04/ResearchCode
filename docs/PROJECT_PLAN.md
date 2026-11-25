@@ -7,7 +7,7 @@ build correct, secure, maintainable, and reproducible research software.
 Core message: AI makes software easier to generate, but scientific correctness and
 engineering rigor remain essential.
 
-Context: Caltech CS/EE 143 special project.
+Context: Caltech CS/EE 143 special project, assigned to a four-person student team: John Ivanov, Bryan Kim, Riley Coover, and Yurii Ilnytskyi.
 
 ## 1. Repository state at start
 
